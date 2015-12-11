@@ -1,3 +1,3 @@
-# trackable
+# trackableJS
 
-Under Construction!
+A Javascript changetracker for JSON objects.
