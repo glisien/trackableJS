@@ -30,6 +30,7 @@
     "gulp-babel": "^6.1.1",
     "gulp-plumber": "^1.0.1",
     "require-dir": "^0.3.0",
+    "vinyl-paths": "^2.1.0",
     "vinyl-source-stream": "^1.1.0"
   }
 }

@@ -5,6 +5,8 @@ var gulp = require('gulp'),
     browserifyConfig = require('../browserify-config'),
     babel = require('gulp-babel'),
     babelConfig = require('../babel-config'),
+    del = require('del'),
+    vinylPaths = require('vinyl-paths'),
     paths = require('../paths');
 
 gulp.task('compile', function() {
@@ -22,6 +24,18 @@ gulp.task('bundle', ['compile'], function() {
     .pipe(gulp.dest(paths.output));
 });
 
-gulp.task('build', ['compile', 'bundle'], function() {
-  return null;
+gulp.task('clean', function() {
+  return gulp
+    .src([paths.output_commonjs + '**/*.js'])
+    .pipe(vinylPaths(del));
+});
+
+gulp.task('build', function() {
+  return gulp
+    .src(paths.source)
+    .pipe(plumber())
+    .pipe(babel(babelConfig.options))
+    .pipe(browserify().bundle())
+    .pipe(source('trackable.js'))
+    .pipe(gulp.dest(paths.output));
 });
