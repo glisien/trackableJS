@@ -1,6 +1,13 @@
+import * as Helpers from './trackable-helpers'
+
+export class TrackableObject {
+  constructor() {
+  }
+}
+
+/*
 (function (window, undefined) {
 
-  /* Generic Helpers */
   function _class(o) {
     return ({}).toString.call(o);
   }
@@ -69,7 +76,6 @@
     }
   }
 
-  /* Trackable Helpers */
   function _trackable_create(o) {
     Object.defineProperty(
       o,
@@ -135,7 +141,6 @@
     );
   }
 
-  /* Trackable Object */
   function TrackableObject(o) {
     if (_isTrackable(o)) {
       throw new Error('Trackers do not like to be tracked.');
@@ -148,7 +153,6 @@
     _trackable_create(this);
   }
 
-  /* Trackable Array */
   function TrackableArray(o) {
     if (_isTrackable(o)) {
       throw new Error('Trackers do not like to be tracked.');
@@ -159,7 +163,6 @@
     }
   }
 
-  /* Modify prototype of the types that Trackable supports */
   Object.defineProperty(
     Object.prototype,
     'AsTrackable',
@@ -187,3 +190,4 @@
   );
 
 })(window);
+*/
