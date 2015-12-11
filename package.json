@@ -1,0 +1,25 @@
+{
+  "name": "trackable",
+  "version": "1.0.0",
+  "description": "A Javascript change tracker for JSON objects.",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/glisien/trackable.git"
+  },
+  "keywords": [
+    "trackable"
+  ],
+  "author": "glisien",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/glisien/trackable/issues"
+  },
+  "homepage": "https://github.com/glisien/trackable#readme"
+}
