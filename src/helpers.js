@@ -104,4 +104,37 @@ export function createTrackableContainer(o) {
 }
 
 export function evaluateState(o) {
+  let workspace = o._trackable.workspaces[0];
+
+  // check deleted
+  if (workspace.state.current === 'd') {
+    return;
+  }
+
+  // check added
+  let isAdded = true;
+
+  for (let property in o._trackable.configuration.addStateDefinition) {
+    if (o.hasOwnProperty(property)) {
+      if (o._trackable.configuration.addStateDefinition[property] !== o[property]) {
+        isAdded = false;
+        break;
+      }
+    } else {
+      isAdded = false;
+      break;
+    }
+  }
+
+  if (isAdded) {
+    workspace.state.current = 'a';
+    return;
+  }
+
+  // check updated
+  if (workspace.changes.length > 0) {
+    workspace.state.current = 'u';
+  } else {
+    workspace.state.current = 'n';
+  }
 }
