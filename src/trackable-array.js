@@ -9,14 +9,21 @@ export class TrackableArray {
     if (!Helpers.isArray(o)) {
       throw new Error('Only an Array can learn how to track.');
     }
-
-    Helpers.createTrackableContainer(this);
   }
 
-  state() {
+  newUnitOfWork() {
   }
 
   hasChanges() {
+  }
+
+  hasPendingChanges() {
+  }
+
+  acceptUnitOfWorkChanges() {
+  }
+
+  rejectUnitOfWorkChanges() {
   }
 
   undoChanges() {

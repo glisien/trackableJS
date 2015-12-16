@@ -3,23 +3,23 @@ export function getClass(o) {
 }
 
 export function isObject(o) {
-  return this.getClass(o).match(/\s([a-zA-Z]+)/)[1].toLowerCase() === 'object';
+  return getClass(o).match(/\s([a-zA-Z]+)/)[1].toLowerCase() === 'object';
 }
 
 export function isArray(o) {
-  return this.getClass(o).match(/\s([a-zA-Z]+)/)[1].toLowerCase() === 'array';
+  return getClass(o).match(/\s([a-zA-Z]+)/)[1].toLowerCase() === 'array';
 }
 
 export function isTrackable(o) {
-  return (this.isObject(o) || this.isArray(o)) && (o instanceof TrackableObject || o instanceof TrackableArray);
+  return (isObject(o) || isArray(o)) && (o instanceof TrackableObject || o instanceof TrackableArray);
 }
 
 export function isTrackableObject(o) {
-  return (this.isObject(o) || this.isArray(o)) && o instanceof TrackableObject;
+  return (isObject(o) || isArray(o)) && o instanceof TrackableObject;
 }
 
 export function isTrackableArray(o) {
-  return (this.isObject(o) || this.isArray(o)) && o instanceof TrackableArray;
+  return (isObject(o) || isArray(o)) && o instanceof TrackableArray;
 }
 
 export function areEqual(o1, o2) {
@@ -54,7 +54,7 @@ export function areEqual(o1, o2) {
       return false;
     }
 
-    if (!this.areEqual(o1[prop], o2[prop])) {
+    if (!areEqual(o1[prop], o2[prop])) {
       return false;
     }
   }
@@ -66,7 +66,18 @@ export function areEqual(o1, o2) {
   }
 }
 
-export function createTrackableContainer(o) {
+export function stringId(length = 10) {
+  let chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
+      result = '';
+
+  for (let i = length; i > 0; --i) {
+    result += chars[Math.floor(Math.random() * chars.length)];
+  }
+
+  return result;
+}
+
+export function createTrackableStructure(o) {
   Object.defineProperty(o, '_trackable', {
     enumerable: false,
     writable: true,
@@ -80,6 +91,15 @@ export function createTrackableContainer(o) {
     configurable: false,
     value: {}
   });
+
+  if (isObject(o)) {
+    Object.defineProperty(o._trackable.configuration, 'addStateDefinition', {
+      enumerable: false,
+      writable: true,
+      configurable: false,
+      value: {}
+    });
+  }
 
   Object.defineProperty(o._trackable, 'extensions', {
     enumerable: false,
@@ -95,6 +115,27 @@ export function createTrackableContainer(o) {
     value: {}
   });
 
+  Object.defineProperty(o._trackable, 'state', {
+    enumerable: false,
+    writable: true,
+    configurable: false,
+    value: {}
+  });
+
+  Object.defineProperty(o._trackable.state, 'current', {
+    enumerable: false,
+    writable: true,
+    configurable: false,
+    value: null
+  });
+
+  Object.defineProperty(o._trackable.state, 'original', {
+    enumerable: false,
+    writable: true,
+    configurable: false,
+    value: null
+  });
+
   Object.defineProperty(o._trackable, 'workspaces', {
     enumerable: false,
     writable: true,
@@ -103,38 +144,50 @@ export function createTrackableContainer(o) {
   });
 }
 
-export function evaluateState(o) {
-  let workspace = o._trackable.workspaces[0];
-
+export function evaluateTrackableObjectState(o) {
   // check deleted
-  if (workspace.state.current === 'd') {
+  if (o._trackable.state.current === 'd') {
     return;
   }
 
   // check added
-  let isAdded = true;
+  if (Object.keys(o._trackable.configuration.addStateDefinition).length) {
+    let isAdded = true;
 
-  for (let property in o._trackable.configuration.addStateDefinition) {
-    if (o.hasOwnProperty(property)) {
-      if (o._trackable.configuration.addStateDefinition[property] !== o[property]) {
+    for (let propertyName in o._trackable.configuration.addStateDefinition) {
+      if (o.hasOwnProperty(propertyName)) {
+        if (o._trackable.configuration.addStateDefinition[propertyName] !== o[propertyName]) {
+          isAdded = false;
+          break;
+        }
+      } else {
         isAdded = false;
         break;
       }
-    } else {
-      isAdded = false;
+    }
+
+    if (isAdded) {
+      o._trackable.state.current = 'a';
+      return;
+    }
+  }
+
+  // check updated
+  let isUpdated = false;
+
+  let w = o._trackable.workspaces.length;
+  while (w--) {
+    if (o._trackable.workspaces[w].changes.length > 0) {
+      isUpdated = true;
       break;
     }
   }
 
-  if (isAdded) {
-    workspace.state.current = 'a';
+  if (isUpdated) {
+    o._trackable.state.current = 'u';
     return;
-  }
-
-  // check updated
-  if (workspace.changes.length > 0) {
-    workspace.state.current = 'u';
   } else {
-    workspace.state.current = 'n';
+    o._trackable.state.current = 'p';
+    return;
   }
 }

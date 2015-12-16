@@ -10,74 +10,93 @@ export class TrackableObject {
       throw new Error('Only an Object can learn how to track.');
     }
 
-    Helpers.createTrackableContainer(this);
+    Helpers.createTrackableStructure(this);
 
-    Object.defineProperty(this._trackable.configuration, 'addStateDefinition', {
-      enumerable: false,
-      writable: true,
-      configurable: false,
-      value: { 'Version': null }
-    });
-
-    if (addStateDefinition) {
-      this._trackable.configuration.addStateDefinition = addStateDefinition;
+    for (let propertyName in o) {
+      if (o.hasOwnProperty(propertyName)) {
+        let propertyDescriptor = Object.getOwnPropertyDescriptor(o, propertyName);
+        if (propertyDescriptor && propertyDescriptor.writable && propertyDescriptor.configurable) {
+          // TODO: Create Field
+        }
+      }
     }
 
-    this.newTrackingWorkspace();
+    Helpers.evaluateTrackableObjectState(this);
+
+    this._trackable.state.original = this._trackable.state.current;
+
+    this.newUnitOfWork();
   }
 
   state() {
-    let workspace = this._trackable.workspaces[0];
-
-    switch (workspace.currentState) {
+    switch (this._trackable.state.current) {
+      case 'p': return 'pristine';
       case 'a': return 'added';
       case 'u': return 'updated';
       case 'd': return 'deleted';
-      case 'n': return 'none';
-      default:  throw new Error('Trackable object has an unknown state.');
+      default:  throw new Error('Trackable Object has an unknown state.');
     }
   }
 
-  newTrackingWorkspace() {
+  isPristine() {
+    return this._trackable.state.current === 'p';
+  }
+
+  isAdded() {
+    return this._trackable.state.current === 'a';
+  }
+
+  isUpdated() {
+    return this._trackable.state.current === 'u';
+  }
+
+  isDeleted() {
+    return this._trackable.state.current === 'd';
+  }
+
+  newUnitOfWork() {
     let workspace = {
       changes: [],
-      state: {
-        current: undefined,
-        original: undefined
-      }
+      id: Helpers.stringId()
     };
 
     this._trackable.workspaces.unshift(workspace);
-
-    Helpers.evaluateState();
-
-    workspace.state.original = workspace.state.current;
   }
 
   hasChanges() {
-    let workspace = this._trackable.workspaces[0];
-    return workspace.changes.length > 0 || workspace.state.current !== workspace.state.original;
+    return this._trackable.workspaces[0].changes.length;
   }
 
-  hasChangesAcrossWorkspaces() {
-    let w = this._trackable.workspaces.length;
-
-    while (w--) {
-      let workspace = this._trackable.workspaces[w];
-      if (workspace.changes.length > 0 || workspace.state.current !== workspace.state.original) {
+  hasPendingChanges() {
+    for (let i = 1; i < this._trackable.workspaces.length; i++) {
+      if (this._trackable.workspaces[i].changes.length) {
         return true;
       }
     }
+  }
 
-    return false;
+  approveUnitOfWorkChanges() {
+  }
+
+  undoUnitOfWorkChanges() {
   }
 
   undoChanges() {
   }
 
-  undoChangesAcrossWorkspaces() {
-  }
-
   asNonTrackable() {
+    let o = {};
+
+    for (let propertyName in this) {
+      if (this.hasOwnProperty(propertyName)) {
+        if (Helpers.isTrackable(this[propertyName])) {
+          o[propertyName] = this[propertyName].asNonTrackable();
+        } else {
+          o[propertyName] = this[propertyName]
+        }
+      }
+    }
+
+    return o;
   }
 }
