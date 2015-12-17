@@ -145,12 +145,12 @@ export function createTrackableStructure(o) {
 }
 
 export function evaluateTrackableObjectState(o) {
-  // check deleted
+  // check if deleted
   if (o._trackable.state.current === 'd') {
     return;
   }
 
-  // check added
+  // check if added
   if (Object.keys(o._trackable.configuration.addStateDefinition).length) {
     let isAdded = true;
 
@@ -172,7 +172,7 @@ export function evaluateTrackableObjectState(o) {
     }
   }
 
-  // check updated
+  // check if updated
   let isUpdated = false;
 
   let w = o._trackable.workspaces.length;

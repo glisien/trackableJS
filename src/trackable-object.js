@@ -75,13 +75,13 @@ export class TrackableObject {
     }
   }
 
-  approveUnitOfWorkChanges() {
+  acceptUnitOfWorkChanges() {
   }
 
-  undoUnitOfWorkChanges() {
+  rejectUnitOfWorkChanges() {
   }
 
-  undoChanges() {
+  rejectChanges() {
   }
 
   asNonTrackable() {
