@@ -23,7 +23,7 @@ export function isTrackableArray(o) {
 }
 
 export function areEqual(o1, o2) {
-  let prop;
+  let propertyName;
 
   if (o1 === o2) {
     return true;
@@ -37,30 +37,30 @@ export function areEqual(o1, o2) {
     return false;
   }
 
-  for (prop in o1) {
-    if (!o1.hasOwnProperty(prop)) {
+  for (propertyName in o1) {
+    if (!o1.hasOwnProperty(propertyName)) {
       continue;
     }
 
-    if (!o2.hasOwnProperty(prop)) {
+    if (!o2.hasOwnProperty(propertyName)) {
       return false;
     }
 
-    if (o1[prop] === o2[prop]) {
+    if (o1[propertyName] === o2[propertyName]) {
       continue;
     }
 
-    if (typeof (o1[prop]) !== 'object') {
+    if (typeof (o1[propertyName]) !== 'object') {
       return false;
     }
 
-    if (!areEqual(o1[prop], o2[prop])) {
+    if (!areEqual(o1[propertyName], o2[propertyName])) {
       return false;
     }
   }
 
-  for (prop in o2) {
-    if (o2.hasOwnProperty(prop) && !o1.hasOwnProperty(prop)) {
+  for (propertyName in o2) {
+    if (o2.hasOwnProperty(propertyName) && !o1.hasOwnProperty(propertyName)) {
       return false;
     }
   }
@@ -141,6 +141,52 @@ export function createTrackableStructure(o) {
     writable: true,
     configurable: false,
     value: []
+  });
+}
+
+export function createTrackableObjectField(o, name, value) {
+  // create backing field
+  if (isObject(value)) {
+    Object.defineProperty(o._trackable.fields, name, {
+      enumerable: true,
+      writable: true,
+      configurable: true,
+      value: new TrackableObject(value)
+    });
+  } else if (isArray(value)) {
+    Object.defineProperty(o._trackable.fields, name, {
+      enumerable: true,
+      writable: true,
+      configurable: true,
+      value: new TrackableArray(value)
+    });
+  } else {
+    Object.defineProperty(o._trackable.fields, name, {
+      enumerable: true,
+      writable: true,
+      configurable: true,
+      value: value
+    });
+  }
+
+  // create getter/setter for backing field
+  Object.defineProperty(o, name, {
+    enumerable: true,
+    configurable: true,
+    get: function() {
+      return o._trackable.fields[name]
+    },
+    set: function(value) {
+      // if already deleted; do not allow more changes
+      if (o._trackable.state.current === 'd') {
+        throw Error('Once deleted always deleted');
+      }
+
+      // if trying to set the value to an existing value; do nothing
+
+
+      o._trackable.fields[name] = value;
+    }
   });
 }
 

@@ -1,5 +1,52 @@
 (function() {
 
+  window.areEqual = function(o1, o2) {
+    var propertyName;
+
+    if (o1 === o2) {
+      return true;
+    }
+
+    if (!(o1 instanceof Object) || !(o2 instanceof Object)) {
+      return false;
+    }
+
+/*
+    if (o1.constructor !== o2.constructor) {
+      return false;
+    }
+*/
+    for (propertyName in o1) {
+      if (!o1.hasOwnProperty(propertyName)) {
+        continue;
+      }
+
+      if (!o2.hasOwnProperty(propertyName)) {
+        return false;
+      }
+
+      if (o1[propertyName] === o2[propertyName]) {
+        continue;
+      }
+
+      if (typeof (o1[propertyName]) !== 'object') {
+        return false;
+      }
+
+      if (!areEqual(o1[propertyName], o2[propertyName])) {
+        return false;
+      }
+    }
+
+    for (propertyName in o2) {
+      if (o2.hasOwnProperty(propertyName) && !o1.hasOwnProperty(propertyName)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   window.context = {
 
     object_1: {

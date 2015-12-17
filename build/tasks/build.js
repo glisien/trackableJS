@@ -1,5 +1,4 @@
 var gulp = require('gulp'),
-    plumber = require('gulp-plumber'),
     source = require('vinyl-source-stream'),
     browserify = require('browserify'),
     babelify = require('babelify'),
