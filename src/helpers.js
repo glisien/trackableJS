@@ -66,6 +66,30 @@ export function areEqual(o1, o2) {
   }
 }
 
+export function find(a, o) {
+  let i = a.length;
+  while (i--) {
+    let found = true;
+
+    for (let propertyName in o) {
+      if (a[i].hasOwnProperty(propertyName)) {
+        if (a[i][propertyName] === o[propertyName]) {
+          continue;
+        }
+      }
+
+      found = false;
+      break;
+    }
+
+    if (found) {
+      return a[i];
+    }
+  }
+
+  return null;
+}
+
 export function stringId(length = 10) {
   let chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
       result = '';
@@ -179,11 +203,45 @@ export function createTrackableObjectField(o, name, value) {
     set: function(value) {
       // if already deleted; do not allow more changes
       if (o._trackable.state.current === 'd') {
-        throw Error('Once deleted always deleted');
+        throw Error('Once deleted always deleted.');
+      }
+
+      // if trying to nullify a TrackableObject or TrackableArray
+      // treat that as a delete and handle as a special case
+      if (value === null || value === undefined) {
+        if (isTrackableObject(o._trackable.fields[name])) {
+          // if TrackableObject is already in a 'deleted' state; do nothing
+          if (o._trackable.fields[name]._trackable.state.current === 'd') {
+            return;
+          }
+
+          // if TrackableObject is already in an 'added' state
+          if (o._trackable.fields[name]._trackable.state.current === 'a') {
+            let change = find(o._trackable.workspace[0].changes, { property: name });
+
+            if (change) {
+              // TODO: previous change found
+            } else {
+              // TODO: add new change
+            }
+
+            let current = o._trackable.fields[name].asNonTrackable();
+            
+            o._trackable.workspaces[0].changes.push({
+              property:
+            })
+            return;
+          }
+
+          o._trackable.fields[name]._trackable.state.current === 'd';
+          return;
+        }
+
+        if (isTrackableArray(o._trackable.fields[name])) {
+        }
       }
 
       // if trying to set the value to an existing value; do nothing
-
 
       o._trackable.fields[name] = value;
     }

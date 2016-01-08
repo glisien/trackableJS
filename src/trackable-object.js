@@ -81,6 +81,9 @@ export class TrackableObject {
   rejectUnitOfWorkChanges() {
   }
 
+  acceptChanges() {
+  }
+
   rejectChanges() {
   }
 
