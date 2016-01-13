@@ -15,6 +15,7 @@ export class TrackableObject {
     for (let propertyName in o) {
       if (o.hasOwnProperty(propertyName)) {
         let propertyDescriptor = Object.getOwnPropertyDescriptor(o, propertyName);
+
         if (propertyDescriptor.writable && propertyDescriptor.configurable) {
           Helpers.createTrackableObjectField(this, propertyName, propertyDescriptor.value);
         }

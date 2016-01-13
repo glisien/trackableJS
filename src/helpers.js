@@ -68,6 +68,7 @@ export function areEqual(o1, o2) {
 
 export function find(a, o) {
   let i = a.length;
+
   while (i--) {
     let found = true;
 
@@ -90,6 +91,11 @@ export function find(a, o) {
   return null;
 }
 
+export function remove(a, o) {
+  let i = a.indexOf(o);
+  a.splice(i, 1);
+}
+
 export function stringId(length = 10) {
   let chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
       result = '';
@@ -99,6 +105,10 @@ export function stringId(length = 10) {
   }
 
   return result;
+}
+
+export function isNullOrUndefined(o) {
+  return o === null || o === undefined;
 }
 
 export function createTrackableStructure(o) {
@@ -206,34 +216,133 @@ export function createTrackableObjectField(o, name, value) {
         throw Error('Once deleted always deleted.');
       }
 
+      // 01. ASSIGN: null/undefined   TO: null/undefined
+      // 02. ASSIGN: null/undefined   TO: TrackableObject
+      // 03. ASSIGN: null/undefined   TO: TrackableArray
+      // 04. ASSIGN: null/undefined   TO: primitive type
+      // 05. ASSIGN: Object           TO: null/undefined
+      // 06. ASSIGN: Object           TO: TrackableObject
+      // 07. ASSIGN: Object           TO: TrackableArray
+      // 08. ASSIGN: Object           TO: primitive type
+      // 09. ASSIGN: Array            TO: null/undefined
+      // 10. ASSIGN: Array            TO: TrackableObject
+      // 11. ASSIGN: Array            TO: TrackableArray
+      // 12. ASSIGN: Array            TO: primitive type
+      // 13. ASSIGN: primitive type   TO: null/undefined
+      // 14. ASSIGN: primitive type   TO: TrackableObject
+      // 15. ASSIGN: primitive type   TO: TrackableArray
+      // 16. ASSIGN: primitive type   TO: primitive type
+
+      if (isNullOrUndefined(value)) {
+        // 01. ASSIGN: null/undefined   TO: null/undefined
+        if (isNullOrUndefined(o._trackable.fields[name])) {
+          return;
+        }
+
+        // 02. ASSIGN: null/undefined TO: TrackableObject
+        if (isTrackableObject(o._trackable.fields[name])) {
+          return;
+        }
+
+        // 03. ASSIGN: null/undefined TO: TrackableArray
+        if (isTrackableArray(o._trackable.fields[name])) {
+          return;
+        }
+
+        // 04. ASSIGN: null/undefined TO: primitive type
+        return;
+      }
+
+      if (isObject(value)) {
+        // 05. ASSIGN: Object TO: null/undefined
+        if (isNullOrUndefined(o._trackable.fields[name])) {
+          return;
+        }
+
+        // 06. ASSIGN: Object TO: TrackableObject
+        if (isTrackableObject(o._trackable.fields[name])) {
+          return;
+        }
+
+        // 07. ASSIGN: Object TO: TrackableArray
+        if (isTrackableArray(o._trackable.fields[name])) {
+          return;
+        }
+
+        // 08. ASSIGN: Object TO: primitive type
+        return;
+      }
+
+      if (isArray(value)) {
+        // 09. ASSIGN: Array TO: null/undefined
+        if (isNullOrUndefined(o._trackable.fields[name])) {
+          return;
+        }
+
+        // 10. ASSIGN: Array TO: TrackableObject
+        if (isTrackableObject(o._trackable.fields[name])) {
+          return;
+        }
+
+        // 11. ASSIGN: Array TO: TrackableArray
+        if (isTrackableArray(o._trackable.fields[name])) {
+          return;
+        }
+
+        // 12. ASSIGN: Array TO: primitive type
+        return;
+      }
+
+      // 13. ASSIGN: primitive type TO: null/undefined
+      if (isNullOrUndefined(o._trackable.fields[name])) {
+        return;
+      }
+
+      // 14. ASSIGN: primitive type TO: TrackableObject
+      if (isTrackableObject(o._trackable.fields[name])) {
+        return;
+      }
+
+      // 15. ASSIGN: primitive type TO: TrackableArray
+      if (isTrackableArray(o._trackable.fields[name])) {
+        return;
+      }
+
+      // 16. ASSIGN: primitive type TO: primitive type
+      return;
+
       // if trying to nullify a TrackableObject or TrackableArray
       // treat that as a delete and handle as a special case
       if (value === null || value === undefined) {
         if (isTrackableObject(o._trackable.fields[name])) {
-          // if TrackableObject is already in a 'deleted' state; do nothing
+          // if TrackableObject is in a 'deleted' state; do nothing
           if (o._trackable.fields[name]._trackable.state.current === 'd') {
             return;
           }
 
-          // if TrackableObject is already in an 'added' state
+          // if TrackableObject is in an 'added' state, nullify
           if (o._trackable.fields[name]._trackable.state.current === 'a') {
-            let change = find(o._trackable.workspace[0].changes, { property: name });
+            let current = o._trackable.fields[name].asNonTrackable(),
+                change = find(o._trackable.workspace[0].changes, { property: name });
 
             if (change) {
-              // TODO: previous change found
+              if (change.origianl === value) {
+                remove(o._trackable.workspace[0].changes, change);
+              }
             } else {
-              // TODO: add new change
+              o._trackable.workspaces[0].changes.push({
+                field: name,
+                origianl: current
+              });
+
+              o._trackable.fields[name] = null;
             }
 
-            let current = o._trackable.fields[name].asNonTrackable();
-            
-            o._trackable.workspaces[0].changes.push({
-              property:
-            })
             return;
           }
 
-          o._trackable.fields[name]._trackable.state.current === 'd';
+          // if TrackableObject is in a 'pristine' or 'updated' state; mark as deleted
+          o._trackable.fields[name]._trackable.state.current = 'd';
           return;
         }
 
@@ -277,9 +386,9 @@ export function evaluateTrackableObjectState(o) {
   }
 
   // check if updated
-  let isUpdated = false;
+  let isUpdated = false,
+      w = o._trackable.workspaces.length;
 
-  let w = o._trackable.workspaces.length;
   while (w--) {
     if (o._trackable.workspaces[w].changes.length > 0) {
       isUpdated = true;
