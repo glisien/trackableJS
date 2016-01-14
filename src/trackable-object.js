@@ -15,7 +15,6 @@ export class TrackableObject {
     for (let propertyName in o) {
       if (o.hasOwnProperty(propertyName)) {
         let propertyDescriptor = Object.getOwnPropertyDescriptor(o, propertyName);
-
         if (propertyDescriptor.writable && propertyDescriptor.configurable) {
           Helpers.createTrackableObjectField(this, propertyName, propertyDescriptor.value);
         }
@@ -23,10 +22,9 @@ export class TrackableObject {
     }
 
     Helpers.evaluateTrackableObjectState(this);
-
     this._trackable.state.original = this._trackable.state.current;
 
-    this.newUnitOfWork();
+    this.newWorkspace();
   }
 
   state() {
@@ -55,17 +53,16 @@ export class TrackableObject {
     return this._trackable.state.current === 'd';
   }
 
-  newUnitOfWork() {
+  newWorkspace() {
     let workspace = {
       changes: [],
       id: Helpers.stringId()
     };
-
     this._trackable.workspaces.unshift(workspace);
   }
 
   hasChanges() {
-    return this._trackable.workspaces[0].changes.length;
+    return !!this._trackable.workspaces[0].changes.length;
   }
 
   hasPendingChanges() {
@@ -76,21 +73,20 @@ export class TrackableObject {
     }
   }
 
-  acceptUnitOfWorkChanges() {
-  }
-
-  rejectUnitOfWorkChanges() {
-  }
-
   acceptChanges() {
   }
 
   rejectChanges() {
   }
 
+  acceptAllChanges() {
+  }
+
+  rejectAllChanges() {
+  }
+
   asNonTrackable() {
     let o = {};
-
     for (let propertyName in this) {
       if (this.hasOwnProperty(propertyName)) {
         if (Helpers.isTrackable(this[propertyName])) {
@@ -100,7 +96,6 @@ export class TrackableObject {
         }
       }
     }
-
     return o;
   }
 }

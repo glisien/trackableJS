@@ -95,6 +95,10 @@
     }
   };
 
+var tc = new TrackableObject(context);
+
+tc.object_1.string = 's-u';
+
 /*
 var tc = new TrackableObject(context);
 
@@ -110,7 +114,7 @@ tc.state(); // updated
 tc.hasChanges(); // true
 tc.hasPendingChanges(); // false
 
-tc.newUnitOfWork();
+tc.newWorkspace();
 
 tc.state(); // updated
 tc.hasChanges(); // false
@@ -125,7 +129,7 @@ tc.state(); // updated
 tc.hasChanges(); // true
 tc.hasPendingChanges(); // true
 
-tc.newUnitOfWork();
+tc.newWorkspace();
 
 tc.string = 's-updated-again';
 

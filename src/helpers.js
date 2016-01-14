@@ -68,17 +68,14 @@ export function areEqual(o1, o2) {
 
 export function find(a, o) {
   let i = a.length;
-
   while (i--) {
     let found = true;
-
     for (let propertyName in o) {
       if (a[i].hasOwnProperty(propertyName)) {
         if (a[i][propertyName] === o[propertyName]) {
           continue;
         }
       }
-
       found = false;
       break;
     }
@@ -87,7 +84,6 @@ export function find(a, o) {
       return a[i];
     }
   }
-
   return null;
 }
 
@@ -103,7 +99,6 @@ export function stringId(length = 10) {
   for (let i = length; i > 0; --i) {
     result += chars[Math.floor(Math.random() * chars.length)];
   }
-
   return result;
 }
 
@@ -216,6 +211,11 @@ export function createTrackableObjectField(o, name, value) {
         throw Error('Once deleted always deleted.');
       }
 
+      // currently not supporting assigning a trackable object or array
+      if (isTrackable(value)) {
+        throw Error('Cannot assing Trackable objects or arrays.');
+      }
+
       // 01. ASSIGN: null/undefined   TO: null/undefined
       // 02. ASSIGN: null/undefined   TO: TrackableObject
       // 03. ASSIGN: null/undefined   TO: TrackableArray
@@ -234,125 +234,146 @@ export function createTrackableObjectField(o, name, value) {
       // 16. ASSIGN: primitive type   TO: primitive type
 
       if (isNullOrUndefined(value)) {
-        // 01. ASSIGN: null/undefined   TO: null/undefined
+        // 01. ASSIGN: null/undefined TO: null/undefined
         if (isNullOrUndefined(o._trackable.fields[name])) {
-          return;
+          console.log('ASSIGN: null/undefined TO: null/undefined');
+          //return;
         }
 
         // 02. ASSIGN: null/undefined TO: TrackableObject
         if (isTrackableObject(o._trackable.fields[name])) {
-          return;
+          console.log('ASSIGN: null/undefined TO: TrackableObject');
+          // TODO
+          //return;
         }
 
         // 03. ASSIGN: null/undefined TO: TrackableArray
         if (isTrackableArray(o._trackable.fields[name])) {
-          return;
+          console.log('ASSIGN: null/undefined TO: TrackableArray');
+          // TODO
+          //return;
         }
 
         // 04. ASSIGN: null/undefined TO: primitive type
-        return;
+        console.log('ASSIGN: null/undefined TO: primitive type');
+        // TODO
+        //return;
       }
 
       if (isObject(value)) {
         // 05. ASSIGN: Object TO: null/undefined
         if (isNullOrUndefined(o._trackable.fields[name])) {
-          return;
+          console.log('ASSIGN: Object TO: null/undefined');
+          // TODO
+          //return;
         }
 
         // 06. ASSIGN: Object TO: TrackableObject
         if (isTrackableObject(o._trackable.fields[name])) {
-          return;
+          console.log('ASSIGN: Object TO: TrackableObject');
+          // TODO
+          //return;
         }
 
         // 07. ASSIGN: Object TO: TrackableArray
         if (isTrackableArray(o._trackable.fields[name])) {
-          return;
+          console.log('ASSIGN: Object TO: TrackableArray');
+          // TODO
+          //return;
         }
 
         // 08. ASSIGN: Object TO: primitive type
-        return;
+        console.log('ASSIGN: Object TO: primitive type');
+        // TODO
+        //return;
       }
 
       if (isArray(value)) {
         // 09. ASSIGN: Array TO: null/undefined
         if (isNullOrUndefined(o._trackable.fields[name])) {
-          return;
+          console.log('ASSIGN: Array TO: null/undefined');
+          // TODO
+          //return;
         }
 
         // 10. ASSIGN: Array TO: TrackableObject
         if (isTrackableObject(o._trackable.fields[name])) {
-          return;
+          console.log('ASSIGN: Array TO: TrackableObject');
+          // TODO
+          //return;
         }
 
         // 11. ASSIGN: Array TO: TrackableArray
         if (isTrackableArray(o._trackable.fields[name])) {
-          return;
+          console.log('ASSIGN: Array TO: TrackableArray');
+          // TODO
+          //return;
         }
 
         // 12. ASSIGN: Array TO: primitive type
-        return;
+        console.log('ASSIGN: Array TO: primitive type');
+        // TODO
+        //return;
       }
 
       // 13. ASSIGN: primitive type TO: null/undefined
       if (isNullOrUndefined(o._trackable.fields[name])) {
-        return;
+        console.log('ASSIGN: primitive type TO: null/undefined');
+        // TODO
+        //return;
       }
 
       // 14. ASSIGN: primitive type TO: TrackableObject
       if (isTrackableObject(o._trackable.fields[name])) {
-        return;
+        console.log('ASSIGN: primitive type TO: TrackableObject');
+        // TODO
+        //return;
       }
 
       // 15. ASSIGN: primitive type TO: TrackableArray
       if (isTrackableArray(o._trackable.fields[name])) {
-        return;
+        console.log('ASSIGN: primitive type TO: TrackableArray');
+        // TODO
+        //return;
       }
 
       // 16. ASSIGN: primitive type TO: primitive type
-      return;
+      console.log('ASSIGN: primitive type TO: primitive type');
+      // TODO
+      //return;
 
-      // if trying to nullify a TrackableObject or TrackableArray
-      // treat that as a delete and handle as a special case
-      if (value === null || value === undefined) {
-        if (isTrackableObject(o._trackable.fields[name])) {
-          // if TrackableObject is in a 'deleted' state; do nothing
-          if (o._trackable.fields[name]._trackable.state.current === 'd') {
-            return;
-          }
+      /*********** TESTING *******************/
+      let change = find(o._trackable.workspaces[0].changes, { property: name });
 
-          // if TrackableObject is in an 'added' state, nullify
-          if (o._trackable.fields[name]._trackable.state.current === 'a') {
-            let current = o._trackable.fields[name].asNonTrackable(),
-                change = find(o._trackable.workspace[0].changes, { property: name });
-
-            if (change) {
-              if (change.origianl === value) {
-                remove(o._trackable.workspace[0].changes, change);
-              }
-            } else {
-              o._trackable.workspaces[0].changes.push({
-                field: name,
-                origianl: current
-              });
-
-              o._trackable.fields[name] = null;
-            }
-
-            return;
-          }
-
-          // if TrackableObject is in a 'pristine' or 'updated' state; mark as deleted
-          o._trackable.fields[name]._trackable.state.current = 'd';
-          return;
+      if (change) {
+        if (areEqual(change.original, value)) {
+          remove(o._trackable.workspaces[0].changes, change);
         }
-
-        if (isTrackableArray(o._trackable.fields[name])) {
+      } else {
+        if (isTrackable(o._trackable.fields[name])) {
+          var nonTrackableOriginal = o._trackable.fields[name].asNonTrackable();
+          change = {
+            property: name,
+            original: o._trackable.fields[name]
+          };
+        } else {
+          change = {
+            property: name,
+            original: o._trackable.fields[name]
+          };
         }
+        o._trackable.workspaces[0].changes.push(change);
       }
 
-      // if trying to set the value to an existing value; do nothing
+      if (isObject(value)) {
+        o._trackable.fields[name] = new TrackableObject(value);
+      } else if (isArray(value)) {
+        o._trackable.fields[name] = new TrackableArray(value);
+      } else {
+        o._trackable.fields[name] = value;
+      }
 
-      o._trackable.fields[name] = value;
+      evaluateTrackableObjectState(o);
     }
   });
 }
