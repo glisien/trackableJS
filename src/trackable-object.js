@@ -24,7 +24,7 @@ export class TrackableObject {
     Helpers.evaluateTrackableObjectState(this);
     this._trackable.state.original = this._trackable.state.current;
 
-    this.newWorkspace();
+    this.snapshot();
   }
 
   state() {
@@ -53,37 +53,102 @@ export class TrackableObject {
     return this._trackable.state.current === 'd';
   }
 
-  newWorkspace() {
-    let workspace = {
-      changes: [],
-      id: Helpers.stringId()
-    };
-    this._trackable.workspaces.unshift(workspace);
-  }
-
-  hasChanges() {
-    return !!this._trackable.workspaces[0].changes.length;
-  }
-
-  hasPendingChanges() {
-    for (let i = 1; i < this._trackable.workspaces.length; i++) {
-      if (this._trackable.workspaces[i].changes.length) {
-        return true;
+  snapshot() {
+    this.localSnapshot();
+    for (let propertyName in this) {
+      if (this.hasOwnProperty(propertyName)) {
+        if (Helpers.isTrackable(this[propertyName])) {
+          this[propertyName].snapshot();
+        }
       }
     }
   }
 
-  acceptChanges() {
+  localSnapshot() {
+    if (this._trackable.snapshots[0].events.length) {
+      let snapshot = {
+        events: [],
+        id: Helpers.stringId()
+      };
+      this._trackable.snapshots.unshift(snapshot);
+    }
+  }
+
+  hasChanges() {
+    // TODO
+  }
+
+  hasLocalChanges() {
+    for (let propertyName in this) {
+      if (this.hasOwnProperty(propertyName)) {
+        if (!Helpers.isTrackable(this[propertyName])) {
+          continue;
+        }
+        // TODO
+      }
+    }
+  }
+
+  hasSnapshotChanges() {
+    // TODO
+  }
+
+  hasLocalSnapshotChanges() {
+    for (let propertyName in this) {
+      if (this.hasOwnProperty(propertyName)) {
+        if (!Helpers.isTrackable(this[propertyName])) {
+          continue;
+        }
+        // TODO
+      }
+    }
   }
 
   rejectChanges() {
+    // TODO
   }
 
-  acceptAllChanges() {
+  rejectLocalChanges() {
+    for (let propertyName in this) {
+      if (this.hasOwnProperty(propertyName)) {
+        if (!Helpers.isTrackable(this[propertyName])) {
+          continue;
+        }
+        // TODO
+      }
+    }
   }
 
-  rejectAllChanges() {
+  rejectSnapshotChanges() {
+    // TODO
   }
+
+  rejectLocalSnapshotChanges() {
+    for (let propertyName in this) {
+      if (this.hasOwnProperty(propertyName)) {
+        if (!Helpers.isTrackable(this[propertyName])) {
+          continue;
+        }
+        // TODO
+      }
+    }
+  }
+
+  acceptSnapshotChanges() {
+    // TODO
+  }
+
+  acceptLocalSnapshotChanges() {
+    for (let propertyName in this) {
+      if (this.hasOwnProperty(propertyName)) {
+        if (!Helpers.isTrackable(this[propertyName])) {
+          continue;
+        }
+        // TODO
+      }
+    }
+  }
+
 
   asNonTrackable() {
     let o = {};

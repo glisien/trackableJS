@@ -165,7 +165,7 @@ export function createTrackableStructure(o) {
     value: null
   });
 
-  Object.defineProperty(o._trackable, 'workspaces', {
+  Object.defineProperty(o._trackable, 'snapshots', {
     enumerable: false,
     writable: true,
     configurable: false,
@@ -343,26 +343,26 @@ export function createTrackableObjectField(o, name, value) {
       //return;
 
       /*********** TESTING *******************/
-      let change = find(o._trackable.workspaces[0].changes, { property: name });
+      let changeEvent = find(o._trackable.snapshots[0].events, { property: name });
 
-      if (change) {
-        if (areEqual(change.original, value)) {
-          remove(o._trackable.workspaces[0].changes, change);
+      if (changeEvent) {
+        if (areEqual(changeEvent.original, value)) {
+          remove(o._trackable.snapshots[0].events, changeEvent);
         }
       } else {
         if (isTrackable(o._trackable.fields[name])) {
           var nonTrackableOriginal = o._trackable.fields[name].asNonTrackable();
-          change = {
+          changeEvent = {
             property: name,
             original: o._trackable.fields[name]
           };
         } else {
-          change = {
+          changeEvent = {
             property: name,
             original: o._trackable.fields[name]
           };
         }
-        o._trackable.workspaces[0].changes.push(change);
+        o._trackable.snapshots[0].events.push(changeEvent);
       }
 
       if (isObject(value)) {
@@ -408,10 +408,10 @@ export function evaluateTrackableObjectState(o) {
 
   // check if updated
   let isUpdated = false,
-      w = o._trackable.workspaces.length;
+      w = o._trackable.snapshots.length;
 
   while (w--) {
-    if (o._trackable.workspaces[w].changes.length > 0) {
+    if (o._trackable.snapshots[w].events.length > 0) {
       isUpdated = true;
       break;
     }
