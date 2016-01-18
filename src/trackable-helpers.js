@@ -1,112 +1,6 @@
-export function getClass(o) {
-  return ({}).toString.call(o);
-}
+import * as GenericHelpers from './generic-helpers'
 
-export function isObject(o) {
-  return getClass(o).match(/\s([a-zA-Z]+)/)[1].toLowerCase() === 'object';
-}
-
-export function isArray(o) {
-  return getClass(o).match(/\s([a-zA-Z]+)/)[1].toLowerCase() === 'array';
-}
-
-export function isTrackable(o) {
-  return (isObject(o) || isArray(o)) && (o instanceof TrackableObject || o instanceof TrackableArray);
-}
-
-export function isTrackableObject(o) {
-  return (isObject(o) || isArray(o)) && o instanceof TrackableObject;
-}
-
-export function isTrackableArray(o) {
-  return (isObject(o) || isArray(o)) && o instanceof TrackableArray;
-}
-
-export function areEqual(o1, o2) {
-  let propertyName;
-
-  if (o1 === o2) {
-    return true;
-  }
-
-  if (!(o1 instanceof Object) || !(o2 instanceof Object)) {
-    return false;
-  }
-
-  if (o1.constructor !== o2.constructor) {
-    return false;
-  }
-
-  for (propertyName in o1) {
-    if (!o1.hasOwnProperty(propertyName)) {
-      continue;
-    }
-
-    if (!o2.hasOwnProperty(propertyName)) {
-      return false;
-    }
-
-    if (o1[propertyName] === o2[propertyName]) {
-      continue;
-    }
-
-    if (typeof (o1[propertyName]) !== 'object') {
-      return false;
-    }
-
-    if (!areEqual(o1[propertyName], o2[propertyName])) {
-      return false;
-    }
-  }
-
-  for (propertyName in o2) {
-    if (o2.hasOwnProperty(propertyName) && !o1.hasOwnProperty(propertyName)) {
-      return false;
-    }
-  }
-}
-
-export function find(a, o) {
-  let i = a.length;
-  while (i--) {
-    let found = true;
-    for (let propertyName in o) {
-      if (a[i].hasOwnProperty(propertyName)) {
-        if (a[i][propertyName] === o[propertyName]) {
-          continue;
-        }
-      }
-      found = false;
-      break;
-    }
-
-    if (found) {
-      return a[i];
-    }
-  }
-  return null;
-}
-
-export function remove(a, o) {
-  let i = a.indexOf(o);
-  a.splice(i, 1);
-}
-
-export function stringId(length = 10) {
-  let chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
-      result = '';
-
-  for (let i = length; i > 0; --i) {
-    result += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return result;
-}
-
-export function isNullOrUndefined(o) {
-  return o === null || o === undefined;
-}
-
-export function createTrackableStructure(o) {
+export function createStructure(o) {
   Object.defineProperty(o, '_trackable', {
     enumerable: false,
     writable: true,
@@ -121,7 +15,7 @@ export function createTrackableStructure(o) {
     value: {}
   });
 
-  if (isObject(o)) {
+  if (GenericHelpers.isObject(o)) {
     Object.defineProperty(o._trackable.configuration, 'addStateDefinition', {
       enumerable: false,
       writable: true,
@@ -165,7 +59,7 @@ export function createTrackableStructure(o) {
     value: null
   });
 
-  Object.defineProperty(o._trackable, 'snapshots', {
+  Object.defineProperty(o._trackable, 'events', {
     enumerable: false,
     writable: true,
     configurable: false,
@@ -173,16 +67,16 @@ export function createTrackableStructure(o) {
   });
 }
 
-export function createTrackableObjectField(o, name, value) {
+export function createField(o, name, value) {
   // create backing field
-  if (isObject(value)) {
+  if (GenericHelpers.isObject(value)) {
     Object.defineProperty(o._trackable.fields, name, {
       enumerable: true,
       writable: true,
       configurable: true,
       value: new TrackableObject(value)
     });
-  } else if (isArray(value)) {
+  } else if (GenericHelpers.isArray(value)) {
     Object.defineProperty(o._trackable.fields, name, {
       enumerable: true,
       writable: true,
@@ -212,7 +106,7 @@ export function createTrackableObjectField(o, name, value) {
       }
 
       // currently not supporting assigning a trackable object or array
-      if (isTrackable(value)) {
+      if (GenericHelpers.isTrackable(value)) {
         throw Error('Cannot assing Trackable objects or arrays.');
       }
 
@@ -233,22 +127,22 @@ export function createTrackableObjectField(o, name, value) {
       // 15. ASSIGN: primitive type   TO: TrackableArray
       // 16. ASSIGN: primitive type   TO: primitive type
 
-      if (isNullOrUndefined(value)) {
+      if (GenericHelpers.isNullOrUndefined(value)) {
         // 01. ASSIGN: null/undefined TO: null/undefined
-        if (isNullOrUndefined(o._trackable.fields[name])) {
+        if (GenericHelpers.isNullOrUndefined(o._trackable.fields[name])) {
           console.log('ASSIGN: null/undefined TO: null/undefined');
           //return;
         }
 
         // 02. ASSIGN: null/undefined TO: TrackableObject
-        if (isTrackableObject(o._trackable.fields[name])) {
+        if (GenericHelpers.isTrackableObject(o._trackable.fields[name])) {
           console.log('ASSIGN: null/undefined TO: TrackableObject');
           // TODO
           //return;
         }
 
         // 03. ASSIGN: null/undefined TO: TrackableArray
-        if (isTrackableArray(o._trackable.fields[name])) {
+        if (GenericHelpers.isTrackableArray(o._trackable.fields[name])) {
           console.log('ASSIGN: null/undefined TO: TrackableArray');
           // TODO
           //return;
@@ -260,23 +154,23 @@ export function createTrackableObjectField(o, name, value) {
         //return;
       }
 
-      if (isObject(value)) {
+      if (GenericHelpers.isObject(value)) {
         // 05. ASSIGN: Object TO: null/undefined
-        if (isNullOrUndefined(o._trackable.fields[name])) {
+        if (GenericHelpers.isNullOrUndefined(o._trackable.fields[name])) {
           console.log('ASSIGN: Object TO: null/undefined');
           // TODO
           //return;
         }
 
         // 06. ASSIGN: Object TO: TrackableObject
-        if (isTrackableObject(o._trackable.fields[name])) {
+        if (GenericHelpers.isTrackableObject(o._trackable.fields[name])) {
           console.log('ASSIGN: Object TO: TrackableObject');
           // TODO
           //return;
         }
 
         // 07. ASSIGN: Object TO: TrackableArray
-        if (isTrackableArray(o._trackable.fields[name])) {
+        if (GenericHelpers.isTrackableArray(o._trackable.fields[name])) {
           console.log('ASSIGN: Object TO: TrackableArray');
           // TODO
           //return;
@@ -288,23 +182,23 @@ export function createTrackableObjectField(o, name, value) {
         //return;
       }
 
-      if (isArray(value)) {
+      if (GenericHelpers.isArray(value)) {
         // 09. ASSIGN: Array TO: null/undefined
-        if (isNullOrUndefined(o._trackable.fields[name])) {
+        if (GenericHelpers.isNullOrUndefined(o._trackable.fields[name])) {
           console.log('ASSIGN: Array TO: null/undefined');
           // TODO
           //return;
         }
 
         // 10. ASSIGN: Array TO: TrackableObject
-        if (isTrackableObject(o._trackable.fields[name])) {
+        if (GenericHelpers.isTrackableObject(o._trackable.fields[name])) {
           console.log('ASSIGN: Array TO: TrackableObject');
           // TODO
           //return;
         }
 
         // 11. ASSIGN: Array TO: TrackableArray
-        if (isTrackableArray(o._trackable.fields[name])) {
+        if (GenericHelpers.isTrackableArray(o._trackable.fields[name])) {
           console.log('ASSIGN: Array TO: TrackableArray');
           // TODO
           //return;
@@ -317,21 +211,21 @@ export function createTrackableObjectField(o, name, value) {
       }
 
       // 13. ASSIGN: primitive type TO: null/undefined
-      if (isNullOrUndefined(o._trackable.fields[name])) {
+      if (GenericHelpers.isNullOrUndefined(o._trackable.fields[name])) {
         console.log('ASSIGN: primitive type TO: null/undefined');
         // TODO
         //return;
       }
 
       // 14. ASSIGN: primitive type TO: TrackableObject
-      if (isTrackableObject(o._trackable.fields[name])) {
+      if (GenericHelpers.isTrackableObject(o._trackable.fields[name])) {
         console.log('ASSIGN: primitive type TO: TrackableObject');
         // TODO
         //return;
       }
 
       // 15. ASSIGN: primitive type TO: TrackableArray
-      if (isTrackableArray(o._trackable.fields[name])) {
+      if (GenericHelpers.isTrackableArray(o._trackable.fields[name])) {
         console.log('ASSIGN: primitive type TO: TrackableArray');
         // TODO
         //return;
@@ -343,14 +237,14 @@ export function createTrackableObjectField(o, name, value) {
       //return;
 
       /*********** TESTING *******************/
-      let changeEvent = find(o._trackable.snapshots[0].events, { property: name });
+      let changeEvent = GenericHelpers.find(o._trackable.snapshots[0].events, { property: name });
 
       if (changeEvent) {
-        if (areEqual(changeEvent.original, value)) {
-          remove(o._trackable.snapshots[0].events, changeEvent);
+        if (GenericHelpers.areEqual(changeEvent.original, value)) {
+          GenericHelpers.remove(o._trackable.snapshots[0].events, changeEvent);
         }
       } else {
-        if (isTrackable(o._trackable.fields[name])) {
+        if (GenericHelpers.isTrackable(o._trackable.fields[name])) {
           var nonTrackableOriginal = o._trackable.fields[name].asNonTrackable();
           changeEvent = {
             property: name,
@@ -365,9 +259,9 @@ export function createTrackableObjectField(o, name, value) {
         o._trackable.snapshots[0].events.push(changeEvent);
       }
 
-      if (isObject(value)) {
+      if (GenericHelpers.isObject(value)) {
         o._trackable.fields[name] = new TrackableObject(value);
-      } else if (isArray(value)) {
+      } else if (GenericHelpers.isArray(value)) {
         o._trackable.fields[name] = new TrackableArray(value);
       } else {
         o._trackable.fields[name] = value;
@@ -378,7 +272,7 @@ export function createTrackableObjectField(o, name, value) {
   });
 }
 
-export function evaluateTrackableObjectState(o) {
+export function evaluateState(o) {
   // check if deleted
   if (o._trackable.state.current === 'd') {
     return;

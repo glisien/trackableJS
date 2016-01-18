@@ -1,16 +1,14 @@
-import * as Helpers from './helpers'
+import * as GenericHelpers from './generic-helpers'
 
 export class TrackableArray {
   constructor(o) {
-    if (Helpers.isTrackable(o)) {
+    if (GenericHelpers.isTrackable(o)) {
       throw new Error('Trackers do not like to be tracked.');
     }
 
-    if (!Helpers.isArray(o)) {
+    if (!GenericHelpers.isArray(o)) {
       throw new Error('Only an Array can learn how to track.');
     }
-
-    Helpers.createTrackableStructure(this);
   }
 
   asNonTrackable() {
