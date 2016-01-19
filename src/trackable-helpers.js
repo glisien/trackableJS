@@ -59,7 +59,28 @@ export function createStructure(o) {
     value: null
   });
 
-  Object.defineProperty(o._trackable, 'events', {
+  Object.defineProperty(o._trackable, 'audit', {
+    enumerable: false,
+    writable: true,
+    configurable: false,
+    value: {}
+  });
+
+  Object.defineProperty(o._trackable.audit, 'pointer', {
+    enumerable: false,
+    writable: true,
+    configurable: false,
+    value: 0
+  });
+
+  Object.defineProperty(o._trackable.audit, 'events', {
+    enumerable: false,
+    writable: true,
+    configurable: false,
+    value: []
+  });
+
+  Object.defineProperty(o._trackable.audit, 'snapshots', {
     enumerable: false,
     writable: true,
     configurable: false,
@@ -100,7 +121,6 @@ export function createField(o, name, value) {
       return o._trackable.fields[name]
     },
     set: function(value) {
-      // if already deleted; do not allow more changes
       if (o._trackable.state.current === 'd') {
         throw Error('Once deleted always deleted.');
       }
@@ -131,110 +151,79 @@ export function createField(o, name, value) {
         // 01. ASSIGN: null/undefined TO: null/undefined
         if (GenericHelpers.isNullOrUndefined(o._trackable.fields[name])) {
           console.log('ASSIGN: null/undefined TO: null/undefined');
-          //return;
         }
 
         // 02. ASSIGN: null/undefined TO: TrackableObject
         if (GenericHelpers.isTrackableObject(o._trackable.fields[name])) {
           console.log('ASSIGN: null/undefined TO: TrackableObject');
-          // TODO
-          //return;
         }
 
         // 03. ASSIGN: null/undefined TO: TrackableArray
         if (GenericHelpers.isTrackableArray(o._trackable.fields[name])) {
           console.log('ASSIGN: null/undefined TO: TrackableArray');
-          // TODO
-          //return;
         }
 
         // 04. ASSIGN: null/undefined TO: primitive type
         console.log('ASSIGN: null/undefined TO: primitive type');
-        // TODO
-        //return;
       }
 
       if (GenericHelpers.isObject(value)) {
         // 05. ASSIGN: Object TO: null/undefined
         if (GenericHelpers.isNullOrUndefined(o._trackable.fields[name])) {
           console.log('ASSIGN: Object TO: null/undefined');
-          // TODO
-          //return;
         }
 
         // 06. ASSIGN: Object TO: TrackableObject
         if (GenericHelpers.isTrackableObject(o._trackable.fields[name])) {
           console.log('ASSIGN: Object TO: TrackableObject');
-          // TODO
-          //return;
         }
 
         // 07. ASSIGN: Object TO: TrackableArray
         if (GenericHelpers.isTrackableArray(o._trackable.fields[name])) {
           console.log('ASSIGN: Object TO: TrackableArray');
-          // TODO
-          //return;
         }
 
         // 08. ASSIGN: Object TO: primitive type
         console.log('ASSIGN: Object TO: primitive type');
-        // TODO
-        //return;
       }
 
       if (GenericHelpers.isArray(value)) {
         // 09. ASSIGN: Array TO: null/undefined
         if (GenericHelpers.isNullOrUndefined(o._trackable.fields[name])) {
           console.log('ASSIGN: Array TO: null/undefined');
-          // TODO
-          //return;
         }
 
         // 10. ASSIGN: Array TO: TrackableObject
         if (GenericHelpers.isTrackableObject(o._trackable.fields[name])) {
           console.log('ASSIGN: Array TO: TrackableObject');
-          // TODO
-          //return;
         }
 
         // 11. ASSIGN: Array TO: TrackableArray
         if (GenericHelpers.isTrackableArray(o._trackable.fields[name])) {
           console.log('ASSIGN: Array TO: TrackableArray');
-          // TODO
-          //return;
         }
 
         // 12. ASSIGN: Array TO: primitive type
         console.log('ASSIGN: Array TO: primitive type');
-        // TODO
-        //return;
       }
 
       // 13. ASSIGN: primitive type TO: null/undefined
       if (GenericHelpers.isNullOrUndefined(o._trackable.fields[name])) {
         console.log('ASSIGN: primitive type TO: null/undefined');
-        // TODO
-        //return;
       }
 
       // 14. ASSIGN: primitive type TO: TrackableObject
       if (GenericHelpers.isTrackableObject(o._trackable.fields[name])) {
         console.log('ASSIGN: primitive type TO: TrackableObject');
-        // TODO
-        //return;
       }
 
       // 15. ASSIGN: primitive type TO: TrackableArray
       if (GenericHelpers.isTrackableArray(o._trackable.fields[name])) {
         console.log('ASSIGN: primitive type TO: TrackableArray');
-        // TODO
-        //return;
       }
 
       // 16. ASSIGN: primitive type TO: primitive type
       console.log('ASSIGN: primitive type TO: primitive type');
-      // TODO
-      //return;
 
       /*********** TESTING *******************/
       let changeEvent = GenericHelpers.find(o._trackable.snapshots[0].events, { property: name });

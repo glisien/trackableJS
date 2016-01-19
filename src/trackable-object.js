@@ -1,6 +1,5 @@
 import * as GenericHelpers from './generic-helpers'
 import * as TrackableHelpers from './trackable-helpers'
-import EventTypes from './event-types'
 
 export class TrackableObject {
   constructor(o, addStateDefinition = null) {
@@ -24,28 +23,96 @@ export class TrackableObject {
     }
   }
 
-  snapshot() {
-    // TODO
+  createSnapshot(snapshotId) {
+    if (!GenericHelpers.isString(snapshotId)) {
+      throw new Error('I only like strings as snapshot identifiers.');
+    }
+
+    this._trackable.audit.snapshots.push({
+      id: snapshotId,
+      pointer: this._trackable.audit.pointer
+    });
+
+    return this;
+  }
+
+  applySnapshot(snapshotId) {
+    let snapshot = GenericHelpers.find(this._trackable.audit.snapshots, { id: snapshotId });
+    if (snapshot) {
+      if (snapshot.pointer < this._trackable.audit.pointer) {
+        while (this._trackable.audit.pointer > snapshot.pointer) {
+          this.undo();
+        }
+      } else if (snapshot.pointer > this._trackable.audit.pointer) {
+        while (this._trackable.audit.pointer < snapshot.pointer) {
+          this.redo();
+        }
+      }
+    }
+    return this;
   }
 
   hasChanges() {
-    // TODO
+    return this.hasLocalChanges() || this.hasChildChanges();
   }
 
-  hasSnapshotChanges() {
-    // TODO
+  hasLocalChanges() {
+    return !!this._trackable.audit.events.length;
   }
 
-  undoChange() {
-    // TODO
+  hasChildChanges() {
+    for (let propertyName in this) {
+      if (this.hasOwnProperty(propertyName)) {
+        if (GenericHelpers.isTrackable(this._trackable.fields[propertyName])) {
+          if (this._trackable.fields[propertyName].hasChanges()) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
   }
 
-  undoSnapshotChanges() {
-    // TODO
+  hasChangesAfterSnapshot(snapshotId) {
+    let snapshot = GenericHelpers.find(this._trackable.audit.snapshots, { id: snapshotId });
+    if (snapshot) {
+      if (this._trackable.audit.events.length > snapshot.pointer) {
+        return true;
+      }
+    }
+    return false;
   }
 
-  redoChange() {
-    // TODO
+  undo() {
+    let change = this._trackable.audit.events[this._trackable.audit.pointer - 1];
+    if (change) {
+      this._trackable.fields[change.property] = change.oldValue;
+      this._trackable.audit.pointer -= 1;
+    }
+    return this;
+  }
+
+  undoAll() {
+    while (this._trackable.audit.pointer > 0) {
+      this.undo();
+    }
+    return this;
+  }
+
+  redo() {
+    let change = this._trackable.audit.events[this._trackable.audit.pointer];
+    if (change) {
+      this._trackable.fields[change.property] = change.newValue;
+      this._trackable.audit.pointer += 1;
+    }
+    return this;
+  }
+
+  redoAll() {
+    while (this._trackable.audit.pointer < this._trackable.audit.events.length) {
+      this.redo();
+    }
+    return this;
   }
 
   /*
@@ -74,131 +141,6 @@ export class TrackableObject {
 
   isDeleted() {
     return this._trackable.state.current === 'd';
-  }
-
-  snapshot() {
-    this.localSnapshot();
-
-    for (let propertyName in this) {
-      if (this.hasOwnProperty(propertyName)) {
-        if (GenericHelpers.isTrackable(this._trackable.fields[propertyName])) {
-          this._trackable.fields[propertyName].snapshot();
-        }
-      }
-    }
-
-    return this;
-  }
-
-  localSnapshot() {
-    if (this._trackable.snapshots[0].events.length) {
-      let snapshot = {
-        events: [],
-        id: GenericHelpers.stringId()
-      };
-      this._trackable.snapshots.unshift(snapshot);
-    }
-    return this;
-  }
-
-  hasChanges() {
-    let hasLocalChanges = this.hasLocalChanges();
-    if (hasLocalChanges) {
-      return true;
-    }
-
-    for (let propertyName in this) {
-      if (this.hasOwnProperty(propertyName)) {
-        if (GenericHelpers.isTrackable(this._trackable.fields[propertyName])) {
-          let hasChanges = this._trackable.fields[propertyName].hasChanges();
-          if (hasChanges) {
-            return true;
-          }
-        }
-      }
-    }
-
-    return false;
-  }
-
-  hasSnapshotChanges() {
-    let hasLocalSnapshotChanges = this.hasLocalSnapshotChanges();
-    if (hasLocalSnapshotChanges) {
-      return true;
-    }
-
-    for (let propertyName in this) {
-      if (this.hasOwnProperty(propertyName)) {
-        if (GenericHelpers.isTrackable(this._trackable.fields[propertyName])) {
-          let hasSnapshotChanges = this._trackable.fields[propertyName].hasSnapshotChanges();
-          if (hasSnapshotChanges) {
-            return true;
-          }
-        }
-      }
-    }
-
-    return false;
-  }
-
-  hasLocalChanges() {
-    let s = this._trackable.snapshots.length;
-    while (s--) {
-      if (this._trackable.snapshots[s].events.length) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  hasLocalSnapshotChanges() {
-    if (this._trackable.snapshots[0].events.length) {
-      return true;
-    }
-    return false;
-  }
-
-  rejectChanges() {
-    // TODO
-    return this;
-  }
-
-  rejectSnapshotChanges() {
-    let e = this._trackable.snapshots[0].events.length;
-    while (e--) {
-
-    }
-    return this;
-  }
-
-  rejectLocalChanges() {
-    // TODO
-    return this;
-  }
-
-  rejectLocalSnapshotChanges() {
-    // TODO
-    return this;
-  }
-
-  acceptChanges() {
-    // TODO
-    return this;
-  }
-
-  acceptSnapshotChanges() {
-    // TODO
-    return this;
-  }
-
-  acceptLocalChanges() {
-    // TODO
-    return this;
-  }
-
-  acceptLocalSnapshotChanges() {
-    // TODO
-    return this;
   }
 
   */

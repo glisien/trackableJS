@@ -2,6 +2,10 @@ export function getClass(o) {
   return ({}).toString.call(o);
 }
 
+export function isString(o) {
+  return getClass(o).match(/\s([a-zA-Z]+)/)[1].toLowerCase() === 'string';
+}
+
 export function isObject(o) {
   return getClass(o).match(/\s([a-zA-Z]+)/)[1].toLowerCase() === 'object';
 }
