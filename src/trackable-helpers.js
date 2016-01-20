@@ -1,14 +1,14 @@
 import * as GenericHelpers from './generic-helpers'
 
 export function createStructure(o) {
-  Object.defineProperty(o, '_trackable', {
+  Object.defineProperty(o, '__trackable__', {
     enumerable: false,
     writable: true,
     configurable: false,
     value: {}
   });
 
-  Object.defineProperty(o._trackable, 'configuration', {
+  Object.defineProperty(o.__trackable__, 'configuration', {
     enumerable: false,
     writable: true,
     configurable: false,
@@ -16,7 +16,7 @@ export function createStructure(o) {
   });
 
   if (GenericHelpers.isObject(o)) {
-    Object.defineProperty(o._trackable.configuration, 'addStateDefinition', {
+    Object.defineProperty(o.__trackable__.configuration, 'addStateDefinition', {
       enumerable: false,
       writable: true,
       configurable: false,
@@ -24,88 +24,88 @@ export function createStructure(o) {
     });
   }
 
-  Object.defineProperty(o._trackable, 'extensions', {
+  Object.defineProperty(o.__trackable__, 'extensions', {
     enumerable: false,
     writable: true,
     configurable: false,
     value: {}
   });
 
-  Object.defineProperty(o._trackable, 'fields', {
+  Object.defineProperty(o.__trackable__, 'fields', {
     enumerable: false,
     writable: true,
     configurable: false,
     value: {}
   });
 
-  Object.defineProperty(o._trackable, 'state', {
+  Object.defineProperty(o.__trackable__, 'state', {
     enumerable: false,
     writable: true,
     configurable: false,
     value: {}
   });
 
-  Object.defineProperty(o._trackable.state, 'current', {
+  Object.defineProperty(o.__trackable__.state, 'current', {
     enumerable: false,
     writable: true,
     configurable: false,
     value: null
   });
 
-  Object.defineProperty(o._trackable.state, 'original', {
+  Object.defineProperty(o.__trackable__.state, 'original', {
     enumerable: false,
     writable: true,
     configurable: false,
     value: null
   });
 
-  Object.defineProperty(o._trackable, 'audit', {
+  Object.defineProperty(o.__trackable__, 'audit', {
     enumerable: false,
     writable: true,
     configurable: false,
     value: {}
   });
 
-  Object.defineProperty(o._trackable.audit, 'pointer', {
+  Object.defineProperty(o.__trackable__.audit, 'pointer', {
     enumerable: false,
     writable: true,
     configurable: false,
     value: 0
   });
 
-  Object.defineProperty(o._trackable.audit, 'events', {
+  Object.defineProperty(o.__trackable__.audit, 'events', {
     enumerable: false,
     writable: true,
     configurable: false,
     value: []
   });
 
-  Object.defineProperty(o._trackable.audit, 'snapshots', {
+  Object.defineProperty(o.__trackable__.audit, 'snapshots', {
     enumerable: false,
     writable: true,
     configurable: false,
-    value: []
+    value: {}
   });
 }
 
 export function createField(o, name, value) {
   // create backing field
   if (GenericHelpers.isObject(value)) {
-    Object.defineProperty(o._trackable.fields, name, {
+    Object.defineProperty(o.__trackable__.fields, name, {
       enumerable: true,
       writable: true,
       configurable: true,
       value: new TrackableObject(value)
     });
   } else if (GenericHelpers.isArray(value)) {
-    Object.defineProperty(o._trackable.fields, name, {
+    Object.defineProperty(o.__trackable__.fields, name, {
       enumerable: true,
       writable: true,
       configurable: true,
       value: new TrackableArray(value)
     });
   } else {
-    Object.defineProperty(o._trackable.fields, name, {
+    Object.defineProperty(o.__trackable__.fields, name, {
       enumerable: true,
       writable: true,
       configurable: true,
@@ -118,10 +118,10 @@ export function createField(o, name, value) {
     enumerable: true,
     configurable: true,
     get: function() {
-      return o._trackable.fields[name]
+      return o.__trackable__.fields[name]
     },
     set: function(value) {
-      if (o._trackable.state.current === 'd') {
+      if (o.__trackable__.state.current === 'd') {
         throw Error('Once deleted always deleted.');
       }
 
@@ -149,131 +149,130 @@ export function createField(o, name, value) {
 
       if (GenericHelpers.isNullOrUndefined(value)) {
         // 01. ASSIGN: null/undefined TO: null/undefined
-        if (GenericHelpers.isNullOrUndefined(o._trackable.fields[name])) {
-          console.log('ASSIGN: null/undefined TO: null/undefined');
+        if (GenericHelpers.isNullOrUndefined(o.__trackable__.fields[name])) {
+          console.info('ASSIGN: null/undefined TO: null/undefined');
         }
 
         // 02. ASSIGN: null/undefined TO: TrackableObject
-        if (GenericHelpers.isTrackableObject(o._trackable.fields[name])) {
-          console.log('ASSIGN: null/undefined TO: TrackableObject');
+        if (GenericHelpers.isTrackableObject(o.__trackable__.fields[name])) {
+          console.info('ASSIGN: null/undefined TO: TrackableObject');
         }
 
         // 03. ASSIGN: null/undefined TO: TrackableArray
-        if (GenericHelpers.isTrackableArray(o._trackable.fields[name])) {
-          console.log('ASSIGN: null/undefined TO: TrackableArray');
+        if (GenericHelpers.isTrackableArray(o.__trackable__.fields[name])) {
+          console.info('ASSIGN: null/undefined TO: TrackableArray');
         }
 
         // 04. ASSIGN: null/undefined TO: primitive type
-        console.log('ASSIGN: null/undefined TO: primitive type');
+        console.info('ASSIGN: null/undefined TO: primitive type');
       }
 
       if (GenericHelpers.isObject(value)) {
         // 05. ASSIGN: Object TO: null/undefined
-        if (GenericHelpers.isNullOrUndefined(o._trackable.fields[name])) {
-          console.log('ASSIGN: Object TO: null/undefined');
+        if (GenericHelpers.isNullOrUndefined(o.__trackable__.fields[name])) {
+          console.info('ASSIGN: Object TO: null/undefined');
         }
 
         // 06. ASSIGN: Object TO: TrackableObject
-        if (GenericHelpers.isTrackableObject(o._trackable.fields[name])) {
-          console.log('ASSIGN: Object TO: TrackableObject');
+        if (GenericHelpers.isTrackableObject(o.__trackable__.fields[name])) {
+          console.info('ASSIGN: Object TO: TrackableObject');
         }
 
         // 07. ASSIGN: Object TO: TrackableArray
-        if (GenericHelpers.isTrackableArray(o._trackable.fields[name])) {
-          console.log('ASSIGN: Object TO: TrackableArray');
+        if (GenericHelpers.isTrackableArray(o.__trackable__.fields[name])) {
+          console.info('ASSIGN: Object TO: TrackableArray');
         }
 
         // 08. ASSIGN: Object TO: primitive type
-        console.log('ASSIGN: Object TO: primitive type');
+        console.info('ASSIGN: Object TO: primitive type');
       }
 
       if (GenericHelpers.isArray(value)) {
         // 09. ASSIGN: Array TO: null/undefined
-        if (GenericHelpers.isNullOrUndefined(o._trackable.fields[name])) {
-          console.log('ASSIGN: Array TO: null/undefined');
+        if (GenericHelpers.isNullOrUndefined(o.__trackable__.fields[name])) {
+          console.info('ASSIGN: Array TO: null/undefined');
         }
 
         // 10. ASSIGN: Array TO: TrackableObject
-        if (GenericHelpers.isTrackableObject(o._trackable.fields[name])) {
-          console.log('ASSIGN: Array TO: TrackableObject');
+        if (GenericHelpers.isTrackableObject(o.__trackable__.fields[name])) {
+          console.info('ASSIGN: Array TO: TrackableObject');
         }
 
         // 11. ASSIGN: Array TO: TrackableArray
-        if (GenericHelpers.isTrackableArray(o._trackable.fields[name])) {
-          console.log('ASSIGN: Array TO: TrackableArray');
+        if (GenericHelpers.isTrackableArray(o.__trackable__.fields[name])) {
+          console.info('ASSIGN: Array TO: TrackableArray');
         }
 
         // 12. ASSIGN: Array TO: primitive type
-        console.log('ASSIGN: Array TO: primitive type');
+        console.info('ASSIGN: Array TO: primitive type');
       }
 
       // 13. ASSIGN: primitive type TO: null/undefined
-      if (GenericHelpers.isNullOrUndefined(o._trackable.fields[name])) {
-        console.log('ASSIGN: primitive type TO: null/undefined');
+      if (GenericHelpers.isNullOrUndefined(o.__trackable__.fields[name])) {
+        console.info('ASSIGN: primitive type TO: null/undefined');
       }
 
       // 14. ASSIGN: primitive type TO: TrackableObject
-      if (GenericHelpers.isTrackableObject(o._trackable.fields[name])) {
-        console.log('ASSIGN: primitive type TO: TrackableObject');
+      if (GenericHelpers.isTrackableObject(o.__trackable__.fields[name])) {
+        console.info('ASSIGN: primitive type TO: TrackableObject');
       }
 
       // 15. ASSIGN: primitive type TO: TrackableArray
-      if (GenericHelpers.isTrackableArray(o._trackable.fields[name])) {
-        console.log('ASSIGN: primitive type TO: TrackableArray');
+      if (GenericHelpers.isTrackableArray(o.__trackable__.fields[name])) {
+        console.info('ASSIGN: primitive type TO: TrackableArray');
       }
 
       // 16. ASSIGN: primitive type TO: primitive type
-      console.log('ASSIGN: primitive type TO: primitive type');
+      console.info('ASSIGN: primitive type TO: primitive type');
 
       /*********** TESTING *******************/
-      let changeEvent = GenericHelpers.find(o._trackable.snapshots[0].events, { property: name });
+      o.__trackable__.audit.events.splice(o.__trackable__.audit.pointer);
 
-      if (changeEvent) {
-        if (GenericHelpers.areEqual(changeEvent.original, value)) {
-          GenericHelpers.remove(o._trackable.snapshots[0].events, changeEvent);
+      for (let propertyName in o.__trackable__.audit.snapshots) {
+        if (o.__trackable__.audit.snapshots.hasOwnProperty(propertyName)) {
+          if (o.__trackable__.audit.snapshots[propertyName] >= o.__trackable__.audit.pointer) {
+            delete o.__trackable__.audit.snapshots[propertyName];
+          }
         }
-      } else {
-        if (GenericHelpers.isTrackable(o._trackable.fields[name])) {
-          var nonTrackableOriginal = o._trackable.fields[name].asNonTrackable();
-          changeEvent = {
-            property: name,
-            original: o._trackable.fields[name]
-          };
-        } else {
-          changeEvent = {
-            property: name,
-            original: o._trackable.fields[name]
-          };
-        }
-        o._trackable.snapshots[0].events.push(changeEvent);
       }
+
+      let change = {
+        property: name,
+        oldValue: GenericHelpers.isTrackable(o.__trackable__.fields[name]) ?
+                    o.__trackable__.fields[name].asNonTrackable() :
+                    o.__trackable__.fields[name],
+        newValue: GenericHelpers.isTrackable(value) ?
+                    value.asNonTrackable() :
+                    value
+      }
+
+      o.__trackable__.audit.events.push(change);
+      o.__trackable__.audit.pointer += 1;
 
       if (GenericHelpers.isObject(value)) {
-        o._trackable.fields[name] = new TrackableObject(value);
+        o.__trackable__.fields[name] = new TrackableObject(value);
       } else if (GenericHelpers.isArray(value)) {
-        o._trackable.fields[name] = new TrackableArray(value);
+        o.__trackable__.fields[name] = new TrackableArray(value);
       } else {
-        o._trackable.fields[name] = value;
+        o.__trackable__.fields[name] = value;
       }
-
-      evaluateTrackableObjectState(o);
     }
   });
 }
 
 export function evaluateState(o) {
   // check if deleted
-  if (o._trackable.state.current === 'd') {
+  if (o.__trackable__.state.current === 'd') {
     return;
   }
 
   // check if added
-  if (Object.keys(o._trackable.configuration.addStateDefinition).length) {
+  if (Object.keys(o.__trackable__.configuration.addStateDefinition).length) {
     let isAdded = true;
 
-    for (let propertyName in o._trackable.configuration.addStateDefinition) {
+    for (let propertyName in o.__trackable__.configuration.addStateDefinition) {
       if (o.hasOwnProperty(propertyName)) {
-        if (o._trackable.configuration.addStateDefinition[propertyName] !== o[propertyName]) {
+        if (o.__trackable__.configuration.addStateDefinition[propertyName] !== o[propertyName]) {
           isAdded = false;
           break;
         }
@@ -284,27 +283,27 @@ export function evaluateState(o) {
     }
 
     if (isAdded) {
-      o._trackable.state.current = 'a';
+      o.__trackable__.state.current = 'a';
       return;
     }
   }
 
   // check if updated
   let isUpdated = false,
-      w = o._trackable.snapshots.length;
+      w = o.__trackable__.snapshots.length;
 
   while (w--) {
-    if (o._trackable.snapshots[w].events.length > 0) {
+    if (o.__trackable__.snapshots[w].events.length > 0) {
       isUpdated = true;
       break;
     }
   }
 
   if (isUpdated) {
-    o._trackable.state.current = 'u';
+    o.__trackable__.state.current = 'u';
     return;
   } else {
-    o._trackable.state.current = 'p';
+    o.__trackable__.state.current = 'p';
     return;
   }
 }

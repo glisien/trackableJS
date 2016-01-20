@@ -27,24 +27,19 @@ export class TrackableObject {
     if (!GenericHelpers.isString(snapshotId)) {
       throw new Error('I only like strings as snapshot identifiers.');
     }
-
-    this._trackable.audit.snapshots.push({
-      id: snapshotId,
-      pointer: this._trackable.audit.pointer
-    });
-
+    this.__trackable__.audit.snapshots[snapshotId] = this.__trackable__.audit.pointer;
     return this;
   }
 
   applySnapshot(snapshotId) {
-    let snapshot = GenericHelpers.find(this._trackable.audit.snapshots, { id: snapshotId });
-    if (snapshot) {
-      if (snapshot.pointer < this._trackable.audit.pointer) {
-        while (this._trackable.audit.pointer > snapshot.pointer) {
+    if (this.__trackable__.audit.snapshots.hasOwnProperty(snapshotId)) {
+      let snapshotPointer = this.__trackable__.audit.snapshots[snapshotId];
+      if (snapshotPointer < this.__trackable__.audit.pointer) {
+        while (this.__trackable__.audit.pointer > snapshotPointer) {
           this.undo();
         }
-      } else if (snapshot.pointer > this._trackable.audit.pointer) {
-        while (this._trackable.audit.pointer < snapshot.pointer) {
+      } else if (snapshotPointer > this.__trackable__.audit.pointer) {
+        while (this.__trackable__.audit.pointer < snapshotPointer) {
           this.redo();
         }
       }
@@ -57,14 +52,14 @@ export class TrackableObject {
   }
 
   hasLocalChanges() {
-    return !!this._trackable.audit.events.length;
+    return !!this.__trackable__.audit.events.length;
   }
 
   hasChildChanges() {
     for (let propertyName in this) {
       if (this.hasOwnProperty(propertyName)) {
-        if (GenericHelpers.isTrackable(this._trackable.fields[propertyName])) {
-          if (this._trackable.fields[propertyName].hasChanges()) {
+        if (GenericHelpers.isTrackable(this.__trackable__.fields[propertyName])) {
+          if (this.__trackable__.fields[propertyName].hasChanges()) {
             return true;
           }
         }
@@ -74,9 +69,9 @@ export class TrackableObject {
   }
 
   hasChangesAfterSnapshot(snapshotId) {
-    let snapshot = GenericHelpers.find(this._trackable.audit.snapshots, { id: snapshotId });
-    if (snapshot) {
-      if (this._trackable.audit.events.length > snapshot.pointer) {
+    if (this.__trackable__.audit.snapshots.hasOwnProperty(snapshotId)) {
+      let snapshotPointer = this.__trackable__.audit.snapshots[snapshotId];
+      if (this.__trackable__.audit.events.length > snapshotPointer) {
         return true;
       }
     }
@@ -84,32 +79,44 @@ export class TrackableObject {
   }
 
   undo() {
-    let change = this._trackable.audit.events[this._trackable.audit.pointer - 1];
+    let change = this.__trackable__.audit.events[this.__trackable__.audit.pointer - 1];
     if (change) {
-      this._trackable.fields[change.property] = change.oldValue;
-      this._trackable.audit.pointer -= 1;
+      if (GenericHelpers.isObject(change.oldValue)) {
+        this.__trackable__.fields[change.property] = new TrackableObject(change.oldValue);
+      } else if (GenericHelpers.isArray(change.oldValue)) {
+        this.__trackable__.fields[change.property] = new TrackableArray(change.oldValue);
+      } else {
+        this.__trackable__.fields[change.property] = change.oldValue;
+      }
+      this.__trackable__.audit.pointer -= 1;
     }
     return this;
   }
 
   undoAll() {
-    while (this._trackable.audit.pointer > 0) {
+    while (this.__trackable__.audit.pointer > 0) {
       this.undo();
     }
     return this;
   }
 
   redo() {
-    let change = this._trackable.audit.events[this._trackable.audit.pointer];
+    let change = this.__trackable__.audit.events[this.__trackable__.audit.pointer];
     if (change) {
-      this._trackable.fields[change.property] = change.newValue;
-      this._trackable.audit.pointer += 1;
+      if (GenericHelpers.isObject(change.newValue)) {
+        this.__trackable__.fields[change.property] = new TrackableObject(change.newValue);
+      } else if (GenericHelpers.isArray(change.newValue)) {
+        this.__trackable__.fields[change.property] = new TrackableArray(change.newValue);
+      } else {
+        this.__trackable__.fields[change.property] = change.newValue;
+      }
+      this.__trackable__.audit.pointer += 1;
     }
     return this;
   }
 
   redoAll() {
-    while (this._trackable.audit.pointer < this._trackable.audit.events.length) {
+    while (this.__trackable__.audit.pointer < this.__trackable__.audit.events.length) {
       this.redo();
     }
     return this;
@@ -118,7 +125,7 @@ export class TrackableObject {
   /*
 
   state() {
-    switch (this._trackable.state.current) {
+    switch (this.__trackable__.state.current) {
       case 'p': return 'pristine';
       case 'a': return 'added';
       case 'u': return 'updated';
@@ -128,19 +135,19 @@ export class TrackableObject {
   }
 
   isPristine() {
-    return this._trackable.state.current === 'p';
+    return this.__trackable__.state.current === 'p';
   }
 
   isAdded() {
-    return this._trackable.state.current === 'a';
+    return this.__trackable__.state.current === 'a';
   }
 
   isUpdated() {
-    return this._trackable.state.current === 'u';
+    return this.__trackable__.state.current === 'u';
   }
 
   isDeleted() {
-    return this._trackable.state.current === 'd';
+    return this.__trackable__.state.current === 'd';
   }
 
   */

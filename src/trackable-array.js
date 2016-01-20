@@ -11,6 +11,46 @@ export class TrackableArray {
     }
   }
 
+  createSnapshot(snapshotId) {
+    // TODO
+  }
+
+  applySnapshot(snapshotId) {
+    // TODO
+  }
+
+  hasChanges() {
+    // TODO
+  }
+
+  hasLocalChanges() {
+    // TODO
+  }
+
+  hasChildChanges() {
+    // TODO
+  }
+
+  hasChangesAfterSnapshot(snapshotId) {
+    // TODO
+  }
+
+  undo() {
+    // TODO
+  }
+
+  undoAll() {
+    // TODO
+  }
+
+  redo() {
+    // TODO
+  }
+
+  redoAll() {
+    // TODO
+  }
+
   asNonTrackable() {
   }
 }
