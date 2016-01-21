@@ -1,20 +1,31 @@
 var gulp = require('gulp'),
-    source = require('vinyl-source-stream'),
-    browserify = require('browserify'),
-    babelify = require('babelify'),
-    paths = require('../paths');
+    babel = require('gulp-babel')
+    runSequence = require('run-sequence');
 
-gulp.task('build', function() {
-  return browserify({
-    entries: paths.root + 'index.js',
-    debug: true
-  })
-  .transform(babelify, {
-    presets: ['es2015'],
-    comments: true,
-    compact: false
-  })
-  .bundle()
-  .pipe(source('trackable.js'))
-  .pipe(gulp.dest(paths.output));
+gulp.task('build-es6', function() {
+  return gulp.src('src/**/*.js').pipe(gulp.dest('dist/es6'));
+});
+
+gulp.task('build-common', function() {
+  return gulp.src('src/**/*.js')
+    .pipe(babel({
+      filename: '',
+      filenameRelative: '',
+      sourceMap: true,
+      sourceRoot: '',
+      moduleIds: false,
+      comments: true,
+      compact: false,
+      code: true,
+      plugins: ['transform-es2015-modules-commonjs']
+    }))
+    .pipe(gulp.dest('dist/common'));
+});
+
+gulp.task('build', function(callback) {
+  runSequence(
+    'clean',
+    ['build-es6', 'build-common'],
+    callback
+  );
 });

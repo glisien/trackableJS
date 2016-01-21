@@ -3,18 +3,18 @@
   "version": "1.0.0",
   "description": "A Javascript change tracker for JSON objects.",
   "main": "index.js",
-  "directories": {
-    "test": "test"
-  },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "directories": {},
+  "scripts": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/glisien/trackable.git"
   },
   "keywords": [
-    "trackable"
+    "trackable",
+    "trackablejs",
+    "javascript",
+    "change tracker",
+    "javascript change tracker"
   ],
   "author": "glisien",
   "license": "ISC",
@@ -23,11 +23,15 @@
   },
   "homepage": "https://github.com/glisien/trackable#readme",
   "devDependencies": {
-    "babel-preset-es2015": "^6.3.13",
-    "babelify": "^7.2.0",
-    "browserify": "^12.0.1",
+    "babel-plugin-transform-es2015-modules-commonjs": "^6.4.5",
+    "del": "^2.2.0",
     "gulp": "^3.9.0",
+    "gulp-babel": "^6.1.1",
+    "jasmine-core": "^2.4.1",
+    "karma": "^0.13.19",
+    "karma-chrome-launcher": "^0.2.2",
+    "karma-jasmine": "^0.3.6",
     "require-dir": "^0.3.0",
-    "vinyl-source-stream": "^1.1.0"
+    "run-sequence": "^1.1.5"
   }
 }

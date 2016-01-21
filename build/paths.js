@@ -1,5 +1,10 @@
 module.exports = {
-  root: './src/',
-  source: './src/**/*.js',
-  output: './dist/'
+  source: {
+    directory: 'src/',
+    jsPattern: 'src/**/*.js'
+  },
+  output: {
+    directory: 'dist/',
+    allPattern: 'dist/**'
+  }
 }
