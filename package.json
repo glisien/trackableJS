@@ -2,7 +2,7 @@
   "name": "trackable",
   "version": "1.0.0",
   "description": "A Javascript change tracker for JSON objects.",
-  "main": "index.js",
+  "main": "dist/trackable.js",
   "directories": {},
   "scripts": {},
   "repository": {
@@ -23,15 +23,12 @@
   },
   "homepage": "https://github.com/glisien/trackable#readme",
   "devDependencies": {
-    "babel-plugin-transform-es2015-modules-commonjs": "^6.4.5",
-    "del": "^2.2.0",
     "gulp": "^3.9.0",
-    "gulp-babel": "^6.1.1",
     "jasmine-core": "^2.4.1",
     "karma": "^0.13.19",
     "karma-chrome-launcher": "^0.2.2",
     "karma-jasmine": "^0.3.6",
-    "require-dir": "^0.3.0",
-    "run-sequence": "^1.1.5"
+    "path": "^0.12.7",
+    "require-dir": "^0.3.0"
   }
 }

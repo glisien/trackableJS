@@ -2,8 +2,8 @@
 
 describe('trackable', () => {
   it('should pass', () => {
-    let value;
-    expect(value).toBeTruthy();
+    var ctt = new TrackableObject({});
+    expect(ctt).toBeTruthy();
   });
 });
 
