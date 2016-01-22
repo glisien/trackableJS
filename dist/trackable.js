@@ -85,20 +85,6 @@
       value: {}
     });
 
-    Object.defineProperty(o._trackable, 'configuration', {
-      enumerable: false,
-      writable: true,
-      configurable: false,
-      value: {}
-    });
-
-    Object.defineProperty(o._trackable.configuration, 'addStateDefinition', {
-      enumerable: false,
-      writable: true,
-      configurable: false,
-      value: {}
-    });
-
     Object.defineProperty(o._trackable, 'fields', {
       enumerable: false,
       writable: true,
@@ -136,7 +122,54 @@
   }
 
   function createTrackableArrayStructure(o) {
-    // TODO
+    Object.defineProperty(o, '_trackable', {
+      enumerable: false,
+      writable: true,
+      configurable: false,
+      value: {}
+    });
+
+    Object.defineProperty(o._trackable, 'fields', {
+      enumerable: false,
+      writable: true,
+      configurable: false,
+      value: {}
+    });
+
+    Object.defineProperty(o._trackable, 'extensions', {
+      enumerable: false,
+      writable: true,
+      configurable: false,
+      value: {}
+    });
+
+    Object.defineProperty(o._trackable, 'audit', {
+      enumerable: false,
+      writable: true,
+      configurable: false,
+      value: {}
+    });
+
+    Object.defineProperty(o._trackable.audit, 'pointer', {
+      enumerable: false,
+      writable: true,
+      configurable: false,
+      value: 0
+    });
+
+    Object.defineProperty(o._trackable.audit, 'events', {
+      enumerable: false,
+      writable: true,
+      configurable: false,
+      value: []
+    });
+
+    Object.defineProperty(o._trackable.audit, 'snapshots', {
+      enumerable: false,
+      writable: true,
+      configurable: false,
+      value: {}
+    });
   }
 
   function createTrackableField(o, fieldName, fieldValue) {
@@ -167,7 +200,6 @@
     // create getter and setter for backing field
     Object.defineProperty(o, fieldName, {
       enumerable: true,
-      writable: true,
       configurable: true,
       get: function() {
         return this._trackable.fields[fieldName];
@@ -311,56 +343,6 @@
     }});
   }
 
-  function evaluateState(o) {
-    /*
-    // check if deleted
-    if (o.__trackable__.state.current === 'd') {
-      return;
-    }
-
-    // check if added
-    if (Object.keys(o.__trackable__.configuration.addStateDefinition).length) {
-      let isAdded = true;
-
-      for (let propertyName in o.__trackable__.configuration.addStateDefinition) {
-        if (o.hasOwnProperty(propertyName)) {
-          if (o.__trackable__.configuration.addStateDefinition[propertyName] !== o[propertyName]) {
-            isAdded = false;
-            break;
-          }
-        } else {
-          isAdded = false;
-          break;
-        }
-      }
-
-      if (isAdded) {
-        o.__trackable__.state.current = 'a';
-        return;
-      }
-    }
-
-    // check if updated
-    let isUpdated = false,
-        w = o.__trackable__.snapshots.length;
-
-    while (w--) {
-      if (o.__trackable__.snapshots[w].events.length > 0) {
-        isUpdated = true;
-        break;
-      }
-    }
-
-    if (isUpdated) {
-      o.__trackable__.state.current = 'u';
-      return;
-    } else {
-      o.__trackable__.state.current = 'p';
-      return;
-    }
-     */
-  }
-
   function TrackableObject(o) {
     var fieldDescriptor,
         fieldName;
@@ -370,7 +352,7 @@
     }
 
     if (!isObject(o)) {
-      throw new Error('Only an object can learn how to track.');
+      throw new Error('Only an Object or Array can learn how to track.');
     }
 
     createTrackableObjectStructure(this);
@@ -383,6 +365,8 @@
         }
       }
     }
+
+    return this;
   }
 
   TrackableObject.prototype.createSnapshot = function(id) {
@@ -415,7 +399,7 @@
   }
 
   TrackableObject.prototype.hasLocalChanges = function() {
-    return !!this._trackable.audit.events.length;
+    return !!(this._trackable.audit.events.length && this._trackable.audit.pointer);
   }
 
   TrackableObject.prototype.hasChildChanges = function() {
@@ -469,11 +453,11 @@
     let changeEvent = this._trackable.audit.events[this._trackable.audit.pointer];
     if (changeEvent) {
       if (isObject(changeEvent.newValue)) {
-        this._trackable_.fields[changeEvent.field] = new TrackableObject(changeEvent.newValue);
+        this._trackable.fields[changeEvent.field] = new TrackableObject(changeEvent.newValue);
       } else if (isArray(changeEvent.newValue)) {
-        this._trackable_.fields[changeEvent.field] = new TrackableArray(changeEvent.newValue);
+        this._trackable.fields[changeEvent.field] = new TrackableArray(changeEvent.newValue);
       } else {
-        this._trackable_.fields[changeEvent.field] = changeEvent.newValue;
+        this._trackable.fields[changeEvent.field] = changeEvent.newValue;
       }
       this._trackable.audit.pointer += 1;
     }
@@ -507,7 +491,29 @@
   window.TrackableObject = TrackableObject;
 
   function TrackableArray(o) {
-    // TODO
+    var fieldDescriptor,
+        fieldName;
+
+    if (isTrackable(o)) {
+      throw new Error('Trackers do not like to be tracked.');
+    }
+
+    if (!isArray(o)) {
+      throw new Error('Only an Object or Array can learn how to track.');
+    }
+
+    createTrackableArrayStructure(this);
+
+    for (fieldName in o) {
+      if (o.hasOwnProperty(fieldName)) {
+        fieldDescriptor = Object.getOwnPropertyDescriptor(o, fieldName);
+        if (fieldDescriptor.writable && fieldDescriptor.configurable) {
+          createTrackableField(this, fieldName, fieldDescriptor.value);
+        }
+      }
+    }
+
+    return this;
   }
 
   TrackableArray.prototype.createSnapshot = function(id) {
