@@ -1,5 +1,5 @@
-(function() {
-  'use strict'
+(function () {
+  'use strict';
 
   function getClass(o) {
     return ({}).toString.call(o);
@@ -201,10 +201,10 @@
     Object.defineProperty(o, fieldName, {
       enumerable: true,
       configurable: true,
-      get: function() {
+      get: function () {
         return this._trackable.fields[fieldName];
       },
-      set: function(value) {
+      set: function (value) {
         var snapshotFieldName,
             changeEvent;
 
@@ -309,6 +309,7 @@
 
       /* TESTING */
       this._trackable.audit.events.splice(this._trackable.audit.pointer);
+      this._trackable.audit.pointer += 1;
 
       for (snapshotFieldName in this._trackable.audit.snapshots) {
         if (this._trackable.audit.snapshots.hasOwnProperty(snapshotFieldName)) {
@@ -329,7 +330,6 @@
       };
 
       this._trackable.audit.events.push(changeEvent);
-      this._trackable.audit.pointer += 1;
 
       if (isObject(value)) {
         this._trackable.fields[fieldName] = new TrackableObject(value);
@@ -369,7 +369,11 @@
     return this;
   }
 
-  TrackableObject.prototype.createSnapshot = function(id) {
+  TrackableObject.prototype.toString = function () {
+    return '[object TrackableObject]';
+  }
+
+  TrackableObject.prototype.createSnapshot = function (id) {
     if (!isString(id)) {
       throw new Error('Trackers only like string snapshot identifiers.')
     }
@@ -377,7 +381,7 @@
     return this;
   }
 
-  TrackableObject.prototype.applySnapshot = function(id) {
+  TrackableObject.prototype.applySnapshot = function (id) {
     var snapshotPointer;
     if (this._trackable.audit.snapshots.hasOwnProperty(id)) {
       snapshotPointer = this._trackable.audit.snapshots[id];
@@ -394,15 +398,15 @@
     return this;
   }
 
-  TrackableObject.prototype.hasChanges = function() {
+  TrackableObject.prototype.hasChanges = function () {
     return this.hasLocalChanges() || this.hasChildChanges();
   }
 
-  TrackableObject.prototype.hasLocalChanges = function() {
+  TrackableObject.prototype.hasLocalChanges = function () {
     return !!(this._trackable.audit.events.length && this._trackable.audit.pointer);
   }
 
-  TrackableObject.prototype.hasChildChanges = function() {
+  TrackableObject.prototype.hasChildChanges = function () {
     var fieldName;
     for (let fieldName in this) {
       if (this.hasOwnProperty(fieldName)) {
@@ -416,18 +420,18 @@
     return false;
   }
 
-  TrackableObject.prototype.hasChangesAfterSnapshot = function(id) {
+  TrackableObject.prototype.hasChangesAfterSnapshot = function (id) {
     var snapshotPointer;
     if (this._trackable.audit.snapshots.hasOwnProperty(id)) {
       snapshotPointer = this._trackable.audit.snapshots[id];
-      if (this._trackable.audit.events.length > snapshotPointer) {
+      if (this._trackable.audit.pointer > snapshotPointer) {
         return true;
       }
     }
     return false;
   }
 
-  TrackableObject.prototype.undo = function() {
+  TrackableObject.prototype.undo = function () {
     var changeEvent = this._trackable.audit.events[this._trackable.audit.pointer - 1];
     if (changeEvent) {
       if (isObject(changeEvent.oldValue)) {
@@ -442,14 +446,14 @@
     return this;
   }
 
-  TrackableObject.prototype.undoAll = function() {
+  TrackableObject.prototype.undoAll = function () {
     while (this._trackable.audit.pointer > 0) {
       this.undo();
     }
     return this;
   }
 
-  TrackableObject.prototype.redo = function() {
+  TrackableObject.prototype.redo = function () {
     let changeEvent = this._trackable.audit.events[this._trackable.audit.pointer];
     if (changeEvent) {
       if (isObject(changeEvent.newValue)) {
@@ -464,14 +468,14 @@
     return this;
   }
 
-  TrackableObject.prototype.redoAll = function() {
+  TrackableObject.prototype.redoAll = function () {
     while (this._trackable.audit.pointer < this._trackable.audit.events.length) {
       this.redo();
     }
     return this;
   }
 
-  TrackableObject.prototype.asNonTrackable = function() {
+  TrackableObject.prototype.asNonTrackable = function () {
     var o = {},
         fieldName;
 
@@ -487,8 +491,6 @@
 
     return o;
   }
-
-  window.TrackableObject = TrackableObject;
 
   function TrackableArray(o) {
     var fieldDescriptor,
@@ -516,53 +518,58 @@
     return this;
   }
 
-  TrackableArray.prototype.createSnapshot = function(id) {
+  TrackableArray.prototype.toString = function () {
+    return '[object TrackableArray]';
+  }
+
+  TrackableArray.prototype.createSnapshot = function (id) {
     // TODO
   }
 
-  TrackableArray.prototype.applySnapshot = function(id) {
+  TrackableArray.prototype.applySnapshot = function (id) {
     // TODO
   }
 
-  TrackableArray.prototype.hasChanges = function() {
-    // TODO
-    return false;
-  }
-
-  TrackableArray.prototype.hasLocalChanges = function() {
-    // TODO
-    return false;
-  }
-
-  TrackableArray.prototype.hasChildChanges = function() {
+  TrackableArray.prototype.hasChanges = function () {
     // TODO
     return false;
   }
 
-  TrackableArray.prototype.hasChangesAfterSnapshot = function(id) {
+  TrackableArray.prototype.hasLocalChanges = function () {
     // TODO
     return false;
   }
 
-  TrackableArray.prototype.undo = function() {
+  TrackableArray.prototype.hasChildChanges = function () {
+    // TODO
+    return false;
+  }
+
+  TrackableArray.prototype.hasChangesAfterSnapshot = function (id) {
+    // TODO
+    return false;
+  }
+
+  TrackableArray.prototype.undo = function () {
     // TODO
   }
 
-  TrackableArray.prototype.undoAll = function() {
+  TrackableArray.prototype.undoAll = function () {
     // TODO
   }
 
-  TrackableArray.prototype.redo = function() {
+  TrackableArray.prototype.redo = function () {
     // TODO
   }
 
-  TrackableArray.prototype.redoAll = function() {
+  TrackableArray.prototype.redoAll = function () {
     // TODO
   }
 
-  TrackableArray.prototype.asNonTrackable = function() {
+  TrackableArray.prototype.asNonTrackable = function () {
     // TODO
   }
 
+  window.TrackableObject = TrackableObject;
   window.TrackableArray = TrackableArray;
 })();

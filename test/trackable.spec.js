@@ -1,6 +1,6 @@
 'use strict';
 
-describe('trackable', function() {
+describe('trackable', function () {
   var trackableContext,
       context = {
         object1: {
@@ -41,18 +41,68 @@ describe('trackable', function() {
         object2: {}
       };
 
-  beforeEach(function() {
+  beforeEach(function () {
     trackableContext = new TrackableObject(context);
   });
 
-  afterEach(function() {
-  });
-
-  describe('change-tracking', function() {
-    it('should pass', function() {
+  describe('change-tracking', function () {
+    it('should have changes', function () {
+      trackableContext.object1.string = 's-updated-1';
+      expect(trackableContext.hasChanges()).toBeTruthy();
     });
-  });
 
-  describe('state-tracking', function() {
+    it('should not have changes after undoing them one-by-one', function () {
+      trackableContext.object1.string = 's-updated-1';
+      trackableContext.object1.string = 's-updated-2';
+      trackableContext.object1.undo();
+      trackableContext.object1.undo();
+      expect(trackableContext.object1.hasChanges()).toBeFalsy();
+    });
+
+    it('should not have changes after undoing all of them', function () {
+      trackableContext.object1.string = 's-updated-1';
+      trackableContext.object1.string = 's-updated-2';
+      trackableContext.object1.undoAll();
+      expect(trackableContext.object1.hasChanges()).toBeFalsy();
+    })
+
+    it('should have changes after redoing the last undone change', function () {
+      trackableContext.object1.number = 1;
+      trackableContext.object1.number = 2;
+      trackableContext.object1.undoAll();
+      trackableContext.object1.redo();
+      expect(trackableContext.object1.number).toBe(1);
+    });
+
+    it('should have changes after redoing the last undone change', function () {
+      trackableContext.object1.number = 1;
+      trackableContext.object1.number = 2;
+      trackableContext.object1.undoAll();
+      trackableContext.object1.redo();
+      expect(trackableContext.object1.hasChanges()).toBeTruthy();
+    });
+
+    it('should redo the last change that was undone', function () {
+      trackableContext.object1.number = 1;
+      trackableContext.object1.number = 2;
+      trackableContext.object1.undoAll();
+      trackableContext.object1.redo();
+      expect(trackableContext.object1.number).toBe(1);
+    });
+
+    it('should have changes after creating snapshot', function () {
+      trackableContext.object1.number = 1;
+      trackableContext.object1.createSnapshot('checkpoint-a');
+      trackableContext.object1.number = 2;
+      expect(trackableContext.object1.hasChangesAfterSnapshot('checkpoint-a')).toBeTruthy();
+    });
+
+    it('should not have changes after restoring to snapshot', function () {
+      trackableContext.object1.number = 1;
+      trackableContext.object1.createSnapshot('checkpoint-a');
+      trackableContext.object1.number = 2;
+      trackableContext.object1.applySnapshot('checkpoint-a');
+      expect(trackableContext.object1.hasChangesAfterSnapshot('checkpoint-a')).toBeFalsy();
+    });
   });
 });
