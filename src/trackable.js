@@ -143,6 +143,13 @@
       value: {}
     });
 
+    Object.defineProperty(o._trackable.extensions, 'length', {
+      enumerable: false,
+      writable: true,
+      configurable: false,
+      value: 0
+    });
+
     Object.defineProperty(o._trackable, 'audit', {
       enumerable: false,
       writable: true,
@@ -169,6 +176,17 @@
       writable: true,
       configurable: false,
       value: {}
+    });
+
+    Object.defineProperty(o, 'length', {
+      enumerable: true,
+      configurable: true,
+      get: function () {
+        return this._trackable.extensions['length'];
+      },
+      set: function () {
+        throw new Error('Not sure what you expect to achieve by setting this field.');
+      }
     });
   }
 
@@ -520,6 +538,18 @@
 
   TrackableArray.prototype.toString = function () {
     return '[object TrackableArray]';
+  }
+
+  TrackableArray.prototype.push = function () {
+    // TODO
+  }
+
+  TrackableArray.prototype.pop = function () {
+    // TODO
+  }
+
+  TrackableArray.prototype.splice = function () {
+    // TODO
   }
 
   TrackableArray.prototype.createSnapshot = function (id) {

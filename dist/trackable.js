@@ -492,8 +492,6 @@
     return o;
   }
 
-  window.TrackableObject = TrackableObject;
-
   function TrackableArray(o) {
     var fieldDescriptor,
         fieldName;
@@ -518,6 +516,10 @@
     }
 
     return this;
+  }
+
+  TrackableArray.prototype.toString = function () {
+    return '[object TrackableArray]';
   }
 
   TrackableArray.prototype.createSnapshot = function (id) {
@@ -568,9 +570,6 @@
     // TODO
   }
 
-  TrackableArray.prototype.toString = function () {
-    return '[object TrackableArray]';
-  }
-
+  window.TrackableObject = TrackableObject;
   window.TrackableArray = TrackableArray;
 })();
