@@ -1,7 +1,6 @@
 (function () {
   'use strict';
 
-  /* GENERIC HELPERS */
   function getClass(o) {
     return ({}).toString.call(o);
   }
@@ -78,7 +77,6 @@
     }
   }
 
-  /* TRACKABLE HELPERS */
   function createTrackableObjectStructure(o) {
     Object.defineProperty(o, '_trackable', {
       enumerable: false,
@@ -363,46 +361,53 @@
     }});
   }
 
-  /* TRACKABLE COMMON */
-  function createSnapshot (o, id) {
+  function Trackable (o) {
+    return;
+  }
+
+  Trackable.prototype.toString = function () {
+    return '[object TrackableArray]';
+  }
+
+  Trackable.prototype.createSnapshot = function (id) {
     if (!isString(id)) {
       throw new Error('Trackers only like string snapshot identifiers.')
     }
-    o._trackable.audit.snapshots[id] = o._trackable.audit.pointer;
-    return o;
+    this._trackable.audit.snapshots[id] = this._trackable.audit.pointer;
+    return this;
   }
 
-  function applySnapshot (o, id) {
+  Trackable.prototype.applySnapshot = function (id) {
     var snapshotPointer;
-    if (o._trackable.audit.snapshots.hasOwnProperty(id)) {
-      snapshotPointer = o._trackable.audit.snapshots[id];
-      if (snapshotPointer < o._trackable.audit.pointer) {
-        while (o._trackable.audit.pointer > snapshotPointer) {
-          o.undo();
+    if (this._trackable.audit.snapshots.hasOwnProperty(id)) {
+      snapshotPointer = this._trackable.audit.snapshots[id];
+      if (snapshotPointer < this._trackable.audit.pointer) {
+        while (this._trackable.audit.pointer > snapshotPointer) {
+          this.undo();
         }
-      } else if (snapshotPointer > o._trackable.audit.pointer) {
-        while (o._trackable.audit.pointer < snapshotPointer) {
-          o.redo();
+      } else if (snapshotPointer > this._trackable.audit.pointer) {
+        while (this._trackable.audit.pointer < snapshotPointer) {
+          this.redo();
         }
       }
     }
-    return o;
+    return this;
   }
 
-  function hasChanges (o) {
-    return o.hasLocalChanges() || o.hasChildChanges();
+  Trackable.prototype.hasChanges = function () {
+    return this.hasLocalChanges() || this.hasChildChanges();
   }
 
-  function hasLocalChanges (o) {
-    return !!(o._trackable.audit.events.length && o._trackable.audit.pointer);
+  Trackable.prototype.hasLocalChanges = function () {
+    return !!(this._trackable.audit.events.length && this._trackable.audit.pointer);
   }
 
-  function hasChildChanges (o) {
+  Trackable.prototype.hasChildChanges = function () {
     var fieldName;
-    for (let fieldName in o) {
-      if (o.hasOwnProperty(fieldName)) {
-        if (isTrackable(o._trackable.fields[fieldName])) {
-          if (o._trackable.fields[fieldName].hasChanges()) {
+    for (let fieldName in this) {
+      if (this.hasOwnProperty(fieldName)) {
+        if (isTrackable(this._trackable.fields[fieldName])) {
+          if (this._trackable.fields[fieldName].hasChanges()) {
             return true;
           }
         }
@@ -411,63 +416,62 @@
     return false;
   }
 
-  function hasChangesAfterSnapshot (o, id) {
+  Trackable.prototype.hasChangesAfterSnapshot = function (id) {
     var snapshotPointer;
-    if (o._trackable.audit.snapshots.hasOwnProperty(id)) {
-      snapshotPointer = o._trackable.audit.snapshots[id];
-      if (o._trackable.audit.pointer > snapshotPointer) {
+    if (this._trackable.audit.snapshots.hasOwnProperty(id)) {
+      snapshotPointer = this._trackable.audit.snapshots[id];
+      if (this._trackable.audit.pointer > snapshotPointer) {
         return true;
       }
     }
     return false;
   }
 
-  function undo (o) {
-    var changeEvent = o._trackable.audit.events[o._trackable.audit.pointer - 1];
+  Trackable.prototype.undo = function () {
+    var changeEvent = this._trackable.audit.events[this._trackable.audit.pointer - 1];
     if (changeEvent) {
       if (isObject(changeEvent.oldValue)) {
-        o._trackable.fields[changeEvent.field] = new TrackableObject(changeEvent.oldValue);
+        this._trackable.fields[changeEvent.field] = new TrackableObject(changeEvent.oldValue);
       } else if (isArray(changeEvent.oldValue)) {
-        o._trackable.fields[changeEvent.field] = new TrackableArray(changeEvent.oldValue);
+        this._trackable.fields[changeEvent.field] = new TrackableArray(changeEvent.oldValue);
       } else {
-        o._trackable.fields[changeEvent.field] = changeEvent.oldValue;
+        this._trackable.fields[changeEvent.field] = changeEvent.oldValue;
       }
-      o._trackable.audit.pointer -= 1;
+      this._trackable.audit.pointer -= 1;
     }
-    return o;
+    return this;
   }
 
-  function undoAll (o) {
-    while (o._trackable.audit.pointer > 0) {
-      o.undo();
+  Trackable.prototype.undoAll = function () {
+    while (this._trackable.audit.pointer > 0) {
+      this.undo();
     }
-    return o;
+    return this;
   }
 
-  function redo (o) {
-    let changeEvent = o._trackable.audit.events[o._trackable.audit.pointer];
+  Trackable.prototype.redo = function () {
+    let changeEvent = this._trackable.audit.events[this._trackable.audit.pointer];
     if (changeEvent) {
       if (isObject(changeEvent.newValue)) {
-        o._trackable.fields[changeEvent.field] = new TrackableObject(changeEvent.newValue);
+        this._trackable.fields[changeEvent.field] = new TrackableObject(changeEvent.newValue);
       } else if (isArray(changeEvent.newValue)) {
-        o._trackable.fields[changeEvent.field] = new TrackableArray(changeEvent.newValue);
+        this._trackable.fields[changeEvent.field] = new TrackableArray(changeEvent.newValue);
       } else {
-        o._trackable.fields[changeEvent.field] = changeEvent.newValue;
+        this._trackable.fields[changeEvent.field] = changeEvent.newValue;
       }
-      o._trackable.audit.pointer += 1;
+      this._trackable.audit.pointer += 1;
     }
-    return o;
+    return this;
   }
 
-  function redoAll (o) {
-    while (o._trackable.audit.pointer < o._trackable.audit.events.length) {
-      o.redo();
+  Trackable.prototype.redoAll = function () {
+    while (this._trackable.audit.pointer < this._trackable.audit.events.length) {
+      this.redo();
     }
-    return o;
+    return this;
   }
 
-  /* TRACKABLE OBJECT */
-  function TrackableObject(o) {
+  function TrackableObject (o) {
     var fieldDescriptor,
         fieldName;
 
@@ -493,48 +497,10 @@
     return this;
   }
 
+  TrackableObject.prototype = new Trackable();
+
   TrackableObject.prototype.toString = function () {
     return '[object TrackableObject]';
-  }
-
-  TrackableObject.prototype.createSnapshot = function (id) {
-    return createSnapshot(this, id);
-  }
-
-  TrackableObject.prototype.applySnapshot = function (id) {
-    return applySnapshot(this, id);
-  }
-
-  TrackableObject.prototype.hasChanges = function () {
-    return hasChanges(this);
-  }
-
-  TrackableObject.prototype.hasLocalChanges = function () {
-    return hasLocalChanges(this);
-  }
-
-  TrackableObject.prototype.hasChildChanges = function () {
-    return hasChildChanges(this);
-  }
-
-  TrackableObject.prototype.hasChangesAfterSnapshot = function (id) {
-    return hasChangesAfterSnapshot(this, id);
-  }
-
-  TrackableObject.prototype.undo = function () {
-    return undo(this);
-  }
-
-  TrackableObject.prototype.undoAll = function () {
-    return undoAll(this);
-  }
-
-  TrackableObject.prototype.redo = function () {
-    return redo(this);
-  }
-
-  TrackableObject.prototype.redoAll = function () {
-    return redoAll(this);
   }
 
   TrackableObject.prototype.asNonTrackable = function () {
@@ -554,8 +520,7 @@
     return o;
   }
 
-  /* TRACKABLE ARRAY */
-  function TrackableArray(o) {
+  function TrackableArray (o) {
     var fieldDescriptor,
         fieldName;
 
@@ -581,6 +546,8 @@
     return this;
   }
 
+  TrackableArray.prototype = new Trackable();
+
   TrackableArray.prototype.toString = function () {
     return '[object TrackableArray]';
   }
@@ -598,46 +565,6 @@
   TrackableArray.prototype.splice = function () {
     // TODO
     throw new Error('Not Implemented.');
-  }
-
-  TrackableArray.prototype.createSnapshot = function (id) {
-    return createSnapshot(this, id);
-  }
-
-  TrackableArray.prototype.applySnapshot = function (id) {
-    return applySnapshot(this, id);
-  }
-
-  TrackableArray.prototype.hasChanges = function () {
-    return hasChanges(this);
-  }
-
-  TrackableArray.prototype.hasLocalChanges = function () {
-    return hasLocalChanges(this);
-  }
-
-  TrackableArray.prototype.hasChildChanges = function () {
-    return hasChildChanges(this);
-  }
-
-  TrackableArray.prototype.hasChangesAfterSnapshot = function (id) {
-    return hasChangesAfterSnapshot(this, id);
-  }
-
-  TrackableArray.prototype.undo = function () {
-    return undo(this);
-  }
-
-  TrackableArray.prototype.undoAll = function () {
-    return undoAll(this);
-  }
-
-  TrackableArray.prototype.redo = function () {
-    return redo(this);
-  }
-
-  TrackableArray.prototype.redoAll = function () {
-    return redoAll(this);
   }
 
   TrackableArray.prototype.asNonTrackable = function () {
@@ -658,5 +585,6 @@
   }
 
   window.TrackableObject = TrackableObject;
+
   window.TrackableArray = TrackableArray;
 })();
