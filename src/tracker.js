@@ -361,6 +361,14 @@
     }});
   }
 
+  function Tracker (config) {
+    this.config = config;
+  }
+
+  Tracker.prototype.asTrackable = function (o) {
+
+  };
+
   function Trackable (o) {
     return;
   }
@@ -473,7 +481,8 @@
 
   function TrackableObject (o) {
     var fieldDescriptor,
-        fieldName;
+        fieldName,
+        trackableObject = {};
 
     if (isTrackable(o)) {
       throw new Error('Trackers do not like to be tracked.');
@@ -483,18 +492,18 @@
       throw new Error('Only an Object or Array can learn how to track.');
     }
 
-    createTrackableObjectStructure(this);
+    createTrackableObjectStructure(trackableObject);
 
     for (fieldName in o) {
       if (o.hasOwnProperty(fieldName)) {
         fieldDescriptor = Object.getOwnPropertyDescriptor(o, fieldName);
         if (fieldDescriptor.writable && fieldDescriptor.configurable) {
-          createTrackableField(this, fieldName, fieldDescriptor.value);
+          createTrackableField(trackableObject, fieldName, fieldDescriptor.value);
         }
       }
     }
 
-    return this;
+    return trackableObject;
   }
 
   TrackableObject.prototype = new Trackable();
@@ -522,7 +531,8 @@
 
   function TrackableArray (o) {
     var fieldDescriptor,
-        fieldName;
+        fieldName,
+        trackableArray = {};
 
     if (isTrackable(o)) {
       throw new Error('Trackers do not like to be tracked.');
@@ -532,18 +542,18 @@
       throw new Error('Only an Object or Array can learn how to track.');
     }
 
-    createTrackableArrayStructure(this);
+    createTrackableArrayStructure(trackableArray);
 
     for (fieldName in o) {
       if (o.hasOwnProperty(fieldName)) {
         fieldDescriptor = Object.getOwnPropertyDescriptor(o, fieldName);
         if (fieldDescriptor.writable && fieldDescriptor.configurable) {
-          createTrackableField(this, fieldName, fieldDescriptor.value);
+          createTrackableField(trackableArray, fieldName, fieldDescriptor.value);
         }
       }
     }
 
-    return this;
+    return trackableArray;
   }
 
   TrackableArray.prototype = new Trackable();
@@ -587,4 +597,47 @@
   window.TrackableObject = TrackableObject;
 
   window.TrackableArray = TrackableArray;
+
+
+  /* TEST */
+  window.context = {
+    object1: {
+      string: 's',
+      number: 0,
+      stringArray: ['s0', 's1', 's2', 's3', 's4'],
+      numberArray: [0, 1, 2, 3, 4],
+      objectArray: [
+        {
+          field: 'object-array-field',
+          array: ['object-array-array-index-0', 'object-array-array-index-1']
+        },
+        {
+          field: 'object-array-field',
+          array: ['object-array-array-index-0', 'object-array-array-index-1']
+        }
+      ],
+      hybridArray: [
+        0,
+        's1',
+        {
+          field: 'hybrid-array-field',
+          object: {}
+        },
+        null,
+        ['a', 'b', 'c'],
+        {
+          field: 'hybrid-array-field',
+          array: [
+            {
+              field1: 'this-is-deep',
+              field2: 'this-is-very-deep'
+            }
+          ]
+        }
+      ]
+    },
+    object2: {}
+  };
+
+  window.tc = new TrackableObject(window.context);
 })();
