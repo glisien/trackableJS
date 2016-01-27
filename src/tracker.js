@@ -1,6 +1,7 @@
 (function () {
   'use strict';
 
+
   function getClass(o) {
     return ({}).toString.call(o);
   }
@@ -76,6 +77,19 @@
       }
     }
   }
+
+  function extend() {
+    var i, key;
+    for (i = 1; i < arguments.length; i++) {
+      for (key in arguments[i]) {
+        if (arguments[i].hasOwnProperty(key)) {
+          arguments[0][key] = arguments[i][key];
+        }
+      }
+    }
+    return arguments[0];
+  }
+
 
   function createTrackableObjectStructure(o) {
     Object.defineProperty(o, '_trackable', {
@@ -361,243 +375,47 @@
     }});
   }
 
+
   function Tracker (config) {
-    this.config = config;
+    var defaultConfig = {
+      trackingStrategy: 'clone',
+      trackingBehavior: 'nested'
+    };
+
+    this.config = extend({}, defaultConfig, config);
   }
 
   Tracker.prototype.asTrackable = function (o) {
-
-  };
-
-  function Trackable (o) {
-    return;
-  }
-
-  Trackable.prototype.toString = function () {
-    return '[object TrackableArray]';
-  }
-
-  Trackable.prototype.createSnapshot = function (id) {
-    if (!isString(id)) {
-      throw new Error('Trackers only like string snapshot identifiers.')
+    if (!isObject(o) && !isArray(o)) {
+      throw new Error('Only Objects and Arrays can be tracked.');
     }
-    this._trackable.audit.snapshots[id] = this._trackable.audit.pointer;
-    return this;
-  }
 
-  Trackable.prototype.applySnapshot = function (id) {
-    var snapshotPointer;
-    if (this._trackable.audit.snapshots.hasOwnProperty(id)) {
-      snapshotPointer = this._trackable.audit.snapshots[id];
-      if (snapshotPointer < this._trackable.audit.pointer) {
-        while (this._trackable.audit.pointer > snapshotPointer) {
-          this.undo();
-        }
-      } else if (snapshotPointer > this._trackable.audit.pointer) {
-        while (this._trackable.audit.pointer < snapshotPointer) {
-          this.redo();
-        }
+    if (this.config.trackingStrategy === 'clone') {
+      var clone = {};
+
+      if (isObject(o)) {
+        createTrackableObjectStructure(clone);
       }
-    }
-    return this;
-  }
 
-  Trackable.prototype.hasChanges = function () {
-    return this.hasLocalChanges() || this.hasChildChanges();
-  }
-
-  Trackable.prototype.hasLocalChanges = function () {
-    return !!(this._trackable.audit.events.length && this._trackable.audit.pointer);
-  }
-
-  Trackable.prototype.hasChildChanges = function () {
-    var fieldName;
-    for (let fieldName in this) {
-      if (this.hasOwnProperty(fieldName)) {
-        if (isTrackable(this._trackable.fields[fieldName])) {
-          if (this._trackable.fields[fieldName].hasChanges()) {
-            return true;
-          }
-        }
-      }
-    }
-    return false;
-  }
-
-  Trackable.prototype.hasChangesAfterSnapshot = function (id) {
-    var snapshotPointer;
-    if (this._trackable.audit.snapshots.hasOwnProperty(id)) {
-      snapshotPointer = this._trackable.audit.snapshots[id];
-      if (this._trackable.audit.pointer > snapshotPointer) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  Trackable.prototype.undo = function () {
-    var changeEvent = this._trackable.audit.events[this._trackable.audit.pointer - 1];
-    if (changeEvent) {
-      if (isObject(changeEvent.oldValue)) {
-        this._trackable.fields[changeEvent.field] = new TrackableObject(changeEvent.oldValue);
-      } else if (isArray(changeEvent.oldValue)) {
-        this._trackable.fields[changeEvent.field] = new TrackableArray(changeEvent.oldValue);
-      } else {
-        this._trackable.fields[changeEvent.field] = changeEvent.oldValue;
-      }
-      this._trackable.audit.pointer -= 1;
-    }
-    return this;
-  }
-
-  Trackable.prototype.undoAll = function () {
-    while (this._trackable.audit.pointer > 0) {
-      this.undo();
-    }
-    return this;
-  }
-
-  Trackable.prototype.redo = function () {
-    let changeEvent = this._trackable.audit.events[this._trackable.audit.pointer];
-    if (changeEvent) {
-      if (isObject(changeEvent.newValue)) {
-        this._trackable.fields[changeEvent.field] = new TrackableObject(changeEvent.newValue);
-      } else if (isArray(changeEvent.newValue)) {
-        this._trackable.fields[changeEvent.field] = new TrackableArray(changeEvent.newValue);
-      } else {
-        this._trackable.fields[changeEvent.field] = changeEvent.newValue;
-      }
-      this._trackable.audit.pointer += 1;
-    }
-    return this;
-  }
-
-  Trackable.prototype.redoAll = function () {
-    while (this._trackable.audit.pointer < this._trackable.audit.events.length) {
-      this.redo();
-    }
-    return this;
-  }
-
-  function TrackableObject (o) {
-    var fieldDescriptor,
-        fieldName,
-        trackableObject = {};
-
-    if (isTrackable(o)) {
-      throw new Error('Trackers do not like to be tracked.');
-    }
-
-    if (!isObject(o)) {
-      throw new Error('Only an Object or Array can learn how to track.');
-    }
-
-    createTrackableObjectStructure(trackableObject);
-
-    for (fieldName in o) {
-      if (o.hasOwnProperty(fieldName)) {
-        fieldDescriptor = Object.getOwnPropertyDescriptor(o, fieldName);
-        if (fieldDescriptor.writable && fieldDescriptor.configurable) {
-          createTrackableField(trackableObject, fieldName, fieldDescriptor.value);
-        }
+      if (isArray(o)) {
+        createTrackableArrayStructure(clone);
       }
     }
 
-    return trackableObject;
-  }
-
-  TrackableObject.prototype = new Trackable();
-
-  TrackableObject.prototype.toString = function () {
-    return '[object TrackableObject]';
-  }
-
-  TrackableObject.prototype.asNonTrackable = function () {
-    var o = {},
-        fieldName;
-
-    for (fieldName in this) {
-      if (this.hasOwnProperty(fieldName)) {
-        if (isTrackable(this[fieldName])) {
-          o[fieldName] = this[fieldName].asNonTrackable();
-        } else {
-          o[fieldName] = this[fieldName]
-        }
+    if (this.config.trackingStrategy === 'mutate') {
+      if (isObject(o)) {
+        createTrackableObjectStructure(o);
       }
-    }
 
-    return o;
+      if (isArray)
+    }
   }
 
-  function TrackableArray (o) {
-    var fieldDescriptor,
-        fieldName,
-        trackableArray = {};
-
-    if (isTrackable(o)) {
-      throw new Error('Trackers do not like to be tracked.');
-    }
-
-    if (!isArray(o)) {
-      throw new Error('Only an Object or Array can learn how to track.');
-    }
-
-    createTrackableArrayStructure(trackableArray);
-
-    for (fieldName in o) {
-      if (o.hasOwnProperty(fieldName)) {
-        fieldDescriptor = Object.getOwnPropertyDescriptor(o, fieldName);
-        if (fieldDescriptor.writable && fieldDescriptor.configurable) {
-          createTrackableField(trackableArray, fieldName, fieldDescriptor.value);
-        }
-      }
-    }
-
-    return trackableArray;
-  }
-
-  TrackableArray.prototype = new Trackable();
-
-  TrackableArray.prototype.toString = function () {
-    return '[object TrackableArray]';
-  }
-
-  TrackableArray.prototype.push = function () {
+  Tracker.prototype.asNonTrackable = function (o) {
     // TODO
-    throw new Error('Not Implemented.');
   }
 
-  TrackableArray.prototype.pop = function () {
-    // TODO
-    throw new Error('Not Implemented.');
-  }
-
-  TrackableArray.prototype.splice = function () {
-    // TODO
-    throw new Error('Not Implemented.');
-  }
-
-  TrackableArray.prototype.asNonTrackable = function () {
-    var o = [],
-        fieldName;
-
-    for (fieldName in this) {
-      if (this.hasOwnProperty(fieldName)) {
-        if (isTrackable(this[fieldName])) {
-          o[fieldName] = this[fieldName].asNonTrackable();
-        } else {
-          o[fieldName] = this[fieldName]
-        }
-      }
-    }
-
-    return o;
-  }
-
-  window.TrackableObject = TrackableObject;
-
-  window.TrackableArray = TrackableArray;
-
+  window.Tracker = Tracker;
 
   /* TEST */
   window.context = {
@@ -639,5 +457,6 @@
     object2: {}
   };
 
-  window.tc = new TrackableObject(window.context);
+  window.tracker1 = new Tracker({ trackingStrategy: 'clone' });
+  window.tracker2 = new Tracker({ trackingStrategy: 'mutate' })
 })();
