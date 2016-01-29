@@ -38,7 +38,9 @@ describe('trackable', function () {
             }
           ]
         },
-        object2: {}
+        object2: {},
+        string: 's',
+        number: 0
       };
 
   beforeEach(function () {

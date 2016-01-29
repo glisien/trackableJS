@@ -18,7 +18,7 @@
   }
 
   function isTrackable(obj) {
-    return (isObject(obj) || isArray(obj)) && (obj instanceof TrackableObject || obj instanceof TrackableArray);
+    return (isObject(obj) || isArray(obj)) && (obj instanceof Trackable);
   }
 
   function isTrackableObject(obj) {
@@ -115,6 +115,7 @@
       return cloneObj;
     }
   }
+
 
   function createObjectTrackingStructure(obj) {
     Object.defineProperty(obj, '_trackable', {
@@ -372,6 +373,7 @@
     }});
   }
 
+
   function Tracker (config) {
     var defaultConfig = {
       trackingMethod: 'clone',
@@ -430,12 +432,12 @@
 
     if (this.config.trackingMethod === 'mutate') {
       if (isObject(obj)) {
-        createObjectTrackingStructure(obj);
         Object.setPrototypeOf(obj, TrackableObject.prototype);
+        createObjectTrackingStructure(obj);
       }
       if (isArray(obj)) {
-        createArrayTrackingStructure(obj);
         Object.setPrototypeOf(obj, TrackableArray.prototype);
+        createArrayTrackingStructure(obj);
       }
       for (let prop in obj) {
         if (obj.hasOwnProperty(prop)) {
@@ -468,7 +470,12 @@
     // TODO
   }
 
+
   function Trackable () { }
+
+  Trackable.prototype.toString = function () {
+    return '[object Trackable]';
+  }
 
   Trackable.prototype.createSnapshot = function (id) {
     if (!isString(id)) {
@@ -559,9 +566,6 @@
     return this;
   }
 
-  Trackable.prototype.toString = function () {
-    return '[object Trackable]';
-  }
 
   function TrackableObject () { }
 
@@ -571,6 +575,7 @@
     return '[object TrackableObject]';
   }
 
+
   function TrackableArray () { }
 
   TrackableArray.prototype = Object.create(Trackable.prototype);
@@ -579,14 +584,12 @@
     return '[object TrackableArray]';
   }
 
+
   window.Tracker = Tracker;
 
-  window.Trackable =  Trackable;
-  window.TrackableObject = TrackableObject;
-  window.TrackableArray = TrackableArray;
-
-
-
+  //window.Trackable =  Trackable;
+  //window.TrackableObject = TrackableObject;
+  //window.TrackableArray = TrackableArray;
 
   /* TEST */
   window.context = {
