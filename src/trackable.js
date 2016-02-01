@@ -1,247 +1,234 @@
 (function () {
   'use strict';
 
-  function getClass(o) {
-    return ({}).toString.call(o);
+  function getClass (obj) {
+    return ({}).toString.call(obj);
   }
 
-  function isString(o) {
-    return getClass(o).match(/\s([a-zA-Z]+)/)[1].toLowerCase() === 'string';
+  function isString (obj) {
+    return getClass(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase() === 'string';
   }
 
-  function isObject(o) {
-    return getClass(o).match(/\s([a-zA-Z]+)/)[1].toLowerCase() === 'object';
+  function isObject (obj) {
+    return getClass(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase() === 'object';
   }
 
-  function isArray(o) {
-    return getClass(o).match(/\s([a-zA-Z]+)/)[1].toLowerCase() === 'array';
+  function isArray (obj) {
+    return getClass(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase() === 'array';
   }
 
-  function isTrackable(o) {
-    return (isObject(o) || isArray(o)) && (o instanceof TrackableObject || o instanceof TrackableArray);
+  function isTrackable (obj) {
+    return (isObject(obj) || isArray(obj)) && (obj instanceof Trackable);
   }
 
-  function isTrackableObject(o) {
-    return (isObject(o) || isArray(o)) && o instanceof TrackableObject;
+  function isTrackableObject (obj) {
+    return (isObject(obj) || isArray(obj)) && obj instanceof TrackableObject;
   }
 
-  function isTrackableArray(o) {
-    return (isObject(o) || isArray(o)) && o instanceof TrackableArray;
+  function isTrackableArray (obj) {
+    return (isObject(obj) || isArray(obj)) && obj instanceof TrackableArray;
   }
 
-  function isNullOrUndefined(o) {
-    return o === null || o === undefined;
+  function isNullOrUndefined (obj) {
+    return obj === null || obj === undefined;
   }
 
-  function areEqual(o1, o2) {
-    var fieldName;
+  function areEqual (obj1, obj2) {
+    var prop;
 
-    if (o1 === o2) {
+    if (obj1 === obj2) {
       return true;
     }
 
-    if (!(o1 instanceof Object) || !(o2 instanceof Object)) {
+    if (!(obj1 instanceof Object) || !(obj2 instanceof Object)) {
       return false;
     }
 
-    if (o1.constructor !== o2.constructor) {
+    if (obj1.constructor !== obj2.constructor) {
       return false;
     }
 
-    for (fieldName in o1) {
-      if (!o1.hasOwnProperty(fieldName)) {
+    for (prop in obj1) {
+      if (!obj1.hasOwnProperty(prop)) {
         continue;
       }
 
-      if (!o2.hasOwnProperty(fieldName)) {
+      if (!obj2.hasOwnProperty(prop)) {
         return false;
       }
 
-      if (o1[fieldName] === o2[fieldName]) {
+      if (obj1[prop] === obj2[prop]) {
         continue;
       }
 
-      if (typeof (o1[fieldName]) !== 'object') {
+      if (typeof (obj1[prop]) !== 'object') {
         return false;
       }
 
-      if (!areEqual(o1[fieldName], o2[fieldName])) {
+      if (!areEqual(obj1[prop], obj2[prop])) {
         return false;
       }
     }
 
-    for (fieldName in o2) {
-      if (o2.hasOwnProperty(fieldName) && !o1.hasOwnProperty(fieldName)) {
+    for (prop in obj2) {
+      if (obj2.hasOwnProperty(prop) && !obj1.hasOwnProperty(prop)) {
         return false;
       }
     }
   }
 
-  function createTrackableObjectStructure(o) {
-    Object.defineProperty(o, '_trackable', {
-      enumerable: false,
-      writable: true,
-      configurable: false,
-      value: {}
-    });
-
-    Object.defineProperty(o._trackable, 'fields', {
-      enumerable: false,
-      writable: true,
-      configurable: false,
-      value: {}
-    });
-
-    Object.defineProperty(o._trackable, 'audit', {
-      enumerable: false,
-      writable: true,
-      configurable: false,
-      value: {}
-    });
-
-    Object.defineProperty(o._trackable.audit, 'pointer', {
-      enumerable: false,
-      writable: true,
-      configurable: false,
-      value: 0
-    });
-
-    Object.defineProperty(o._trackable.audit, 'events', {
-      enumerable: false,
-      writable: true,
-      configurable: false,
-      value: []
-    });
-
-    Object.defineProperty(o._trackable.audit, 'snapshots', {
-      enumerable: false,
-      writable: true,
-      configurable: false,
-      value: {}
-    });
+  function extend () {
+    var i, prop;
+    for (i = 1; i < arguments.length; i++) {
+      for (prop in arguments[i]) {
+        if (arguments[i].hasOwnProperty(prop)) {
+          arguments[0][prop] = arguments[i][prop];
+        }
+      }
+    }
+    return arguments[0];
   }
 
-  function createTrackableArrayStructure(o) {
-    Object.defineProperty(o, '_trackable', {
+  function clone (obj) {
+    var cloneObj, prop, i;
+
+    if (isObject(obj)) {
+      cloneObj = {};
+      for (prop in obj) {
+        if (obj.hasOwnProperty(prop)) {
+          if (isObject(obj[prop]) || isArray(obj[prop]) || isTrackable(obj[prop])) {
+            cloneObj[prop] = clone(obj[prop]);
+            continue;
+          }
+          cloneObj[prop] = obj[prop];
+        }
+      }
+      return cloneObj;
+    }
+
+    if (isArray(obj)) {
+      cloneObj = [];
+      for (i = 0, l = obj.length; i < l; i++) {
+        if (isObject(obj[i]) || isArray(obj[i]) || isTrackable(obj[i])) {
+          cloneObj.push(clone(obj[i]));
+          continue;
+        }
+        cloneObj.push(obj[i]);
+      }
+      return cloneObj;
+    }
+
+    if (isTrackable(obj)) {
+      if (isTrackableObject(obj)) {
+        cloneObj = Object.create(TrackableObject.prototype);
+      }
+      if (isTrackableArray(obj)) {
+        cloneObj = Object.create(TrackableArray.prototype);
+      }
+      createTrackingStructure(cloneObj);
+      for (prop in obj) {
+        if (obj.hasOwnProperty(prop)) {
+          if (isObject(obj[prop]) || isArray(obj[prop]) || isTrackable(obj[prop])) {
+            createPropertyTrackingStructure(cloneObj, prop, clone(obj[prop]));
+            continue;
+          }
+          createPropertyTrackingStructure(cloneObj, prop, obj[prop]);
+        }
+      }
+      cloneObj._trackable.audit = clone(obj._trackable.audit);
+      return cloneObj;
+    }
+  }
+
+  function createTrackingStructure (obj) {
+    Object.defineProperty(obj, '_trackable', {
       enumerable: false,
       writable: true,
-      configurable: false,
-      value: {}
-    });
-
-    Object.defineProperty(o._trackable, 'fields', {
-      enumerable: false,
-      writable: true,
-      configurable: false,
-      value: {}
-    });
-
-    Object.defineProperty(o._trackable, 'extensions', {
-      enumerable: false,
-      writable: true,
-      configurable: false,
-      value: {}
-    });
-
-    Object.defineProperty(o._trackable.extensions, 'length', {
-      enumerable: false,
-      writable: true,
-      configurable: false,
-      value: 0
-    });
-
-    Object.defineProperty(o._trackable, 'audit', {
-      enumerable: false,
-      writable: true,
-      configurable: false,
-      value: {}
-    });
-
-    Object.defineProperty(o._trackable.audit, 'pointer', {
-      enumerable: false,
-      writable: true,
-      configurable: false,
-      value: 0
-    });
-
-    Object.defineProperty(o._trackable.audit, 'events', {
-      enumerable: false,
-      writable: true,
-      configurable: false,
-      value: []
-    });
-
-    Object.defineProperty(o._trackable.audit, 'snapshots', {
-      enumerable: false,
-      writable: true,
-      configurable: false,
-      value: {}
-    });
-
-    Object.defineProperty(o, 'length', {
-      enumerable: true,
       configurable: true,
-      get: function () {
-        return this._trackable.extensions['length'];
-      },
-      set: function () {
-        throw new Error('Not sure what you expect to achieve by setting this field.');
-      }
+      value: {}
+    });
+
+    Object.defineProperty(obj._trackable, 'fields', {
+      enumerable: false,
+      writable: true,
+      configurable: true,
+      value: {}
+    });
+
+    Object.defineProperty(obj._trackable, 'audit', {
+      enumerable: false,
+      writable: true,
+      configurable: true,
+      value: {}
+    });
+
+    Object.defineProperty(obj._trackable.audit, 'pointer', {
+      enumerable: false,
+      writable: true,
+      configurable: true,
+      value: 0
+    });
+
+    Object.defineProperty(obj._trackable.audit, 'events', {
+      enumerable: false,
+      writable: true,
+      configurable: true,
+      value: []
+    });
+
+    Object.defineProperty(obj._trackable.audit, 'snapshots', {
+      enumerable: false,
+      writable: true,
+      configurable: true,
+      value: {}
     });
   }
 
-  function createTrackableField(o, fieldName, fieldValue) {
+  function deleteTrackingStructure (obj) {
+    delete obj._trackable.audit.snapshots;
+    delete obj._trackable.audit.events;
+    delete obj._trackable.audit.pointer;
+    delete obj._trackable.audit;
+    delete obj._trackable.fields;
+    delete obj._trackable;
+  }
+
+  function createPropertyTrackingStructure(obj, prop, val) {
     // create backing field
-    if (isObject(fieldValue)) {
-      Object.defineProperty(o._trackable.fields, fieldName, {
-        enumerable: true,
-        writable: true,
-        configurable: true,
-        value: new TrackableObject(fieldValue)
-      });
-    } else if (isArray(fieldValue)) {
-      Object.defineProperty(o._trackable.fields, fieldName, {
-        enumerable: true,
-        writable: true,
-        configurable: true,
-        value: new TrackableArray(fieldValue)
-      });
-    } else {
-      Object.defineProperty(o._trackable.fields, fieldName, {
-        enumerable: true,
-        writable: true,
-        configurable: true,
-        value: fieldValue
-      });
-    }
+    Object.defineProperty(obj._trackable.fields, prop, {
+      enumerable: true,
+      writable: true,
+      configurable: true,
+      value: val
+    });
 
     // create getter and setter for backing field
-    Object.defineProperty(o, fieldName, {
+    Object.defineProperty(obj, prop, {
       enumerable: true,
       configurable: true,
       get: function () {
-        return this._trackable.fields[fieldName];
+        return this._trackable.fields[prop];
       },
       set: function (value) {
         var snapshotFieldName,
             changeEvent;
 
-        if (isTrackable(value)) {
-          throw new Error('Cannot assign Trackable objects or arrays.');
+        if ((isObject(value) || isArray(value)) && !isTrackable(value)) {
+          throw new Error('Object and Arrays must be trackable before being assigned.');
         }
 
         // 01. ASSIGN: null/undefined   TO: null/undefined
         // 02. ASSIGN: null/undefined   TO: TrackableObject
         // 03. ASSIGN: null/undefined   TO: TrackableArray
         // 04. ASSIGN: null/undefined   TO: primitive_type
-        // 05. ASSIGN: Object           TO: null/undefined
-        // 06. ASSIGN: Object           TO: TrackableObject
-        // 07. ASSIGN: Object           TO: TrackableArray
-        // 08. ASSIGN: Object           TO: primitive_type
-        // 09. ASSIGN: Array            TO: null/undefined
-        // 10. ASSIGN: Array            TO: TrackableObject
-        // 11. ASSIGN: Array            TO: TrackableArray
-        // 12. ASSIGN: Array            TO: primitive_type
+        // 05. ASSIGN: TrackableObject  TO: null/undefined
+        // 06. ASSIGN: TrackableObject  TO: TrackableObject
+        // 07. ASSIGN: TrackableObject  TO: TrackableArray
+        // 08. ASSIGN: TrackableObject  TO: primitive_type
+        // 09. ASSIGN: TrackableArray   TO: null/undefined
+        // 10. ASSIGN: TrackableArray   TO: TrackableObject
+        // 11. ASSIGN: TrackableArray   TO: TrackableArray
+        // 12. ASSIGN: TrackableArray   TO: primitive_type
         // 13. ASSIGN: primitive_type   TO: null/undefined
         // 14. ASSIGN: primitive_type   TO: TrackableObject
         // 15. ASSIGN: primitive_type   TO: TrackableArray
@@ -249,17 +236,17 @@
 
         if (isNullOrUndefined(value)) {
           // 01. ASSIGN: null/undefined TO: null/undefined
-          if (isNullOrUndefined(this._trackable.fields[fieldName])) {
+          if (isNullOrUndefined(this._trackable.fields[prop])) {
             console.info('ASSIGN: null/undefined TO: null/undefined');
           }
 
           // 02. ASSIGN: null/undefined TO: TrackableObject
-          if (isTrackableObject(this._trackable.fields[fieldName])) {
+          if (isTrackableObject(this._trackable.fields[prop])) {
             console.info('ASSIGN: null/undefined TO: TrackableObject');
           }
 
           // 03. ASSIGN: null/undefined TO: TrackableArray
-          if (isTrackableArray(this._trackable.fields[fieldName])) {
+          if (isTrackableArray(this._trackable.fields[prop])) {
             console.info('ASSIGN: null/undefined TO: TrackableArray');
           }
 
@@ -267,19 +254,19 @@
           console.info('ASSIGN: null/undefined TO: primitive_type');
         }
 
-        if (isObject(value)) {
+        if (isTrackableObject(value)) {
           // 05. ASSIGN: Object TO: null/undefined
-          if (isNullOrUndefined(this._trackable.fields[fieldName])) {
+          if (isNullOrUndefined(this._trackable.fields[prop])) {
             console.info('ASSIGN: Object TO: null/undefined');
           }
 
           // 06. ASSIGN: Object TO: TrackableObject
-          if (isTrackableObject(this._trackable.fields[fieldName])) {
+          if (isTrackableObject(this._trackable.fields[prop])) {
             console.info('ASSIGN: Object TO: TrackableObject');
           }
 
           // 07. ASSIGN: Object TO: TrackableArray
-          if (isTrackableArray(this._trackable.fields[fieldName])) {
+          if (isTrackableArray(this._trackable.fields[prop])) {
             console.info('ASSIGN: Object TO: TrackableArray');
           }
 
@@ -287,19 +274,19 @@
           console.info('ASSIGN: Object TO: primitive_type');
         }
 
-        if (isArray(value)) {
+        if (isTrackableArray(value)) {
           // 09. ASSIGN: Array TO: null/undefined
-          if (isNullOrUndefined(this._trackable.fields[fieldName])) {
+          if (isNullOrUndefined(this._trackable.fields[prop])) {
             console.info('ASSIGN: Array TO: null/undefined');
           }
 
           // 10. ASSIGN: Array TO: TrackableObject
-          if (isTrackableObject(this._trackable.fields[fieldName])) {
+          if (isTrackableObject(this._trackable.fields[prop])) {
             console.info('ASSIGN: Array TO: TrackableObject');
           }
 
           // 11. ASSIGN: Array TO: TrackableArray
-          if (isTrackableArray(this._trackable.fields[fieldName])) {
+          if (isTrackableArray(this._trackable.fields[prop])) {
             console.info('ASSIGN: Array TO: TrackableArray');
           }
 
@@ -308,17 +295,17 @@
         }
 
         // 13. ASSIGN: primitive type TO: null/undefined
-        if (isNullOrUndefined(this._trackable.fields[fieldName])) {
+        if (isNullOrUndefined(this._trackable.fields[prop])) {
           console.info('ASSIGN: primitive_type TO: null/undefined');
         }
 
         // 14. ASSIGN: primitive type TO: TrackableObject
-        if (isTrackableObject(this._trackable.fields[fieldName])) {
+        if (isTrackableObject(this._trackable.fields[prop])) {
           console.info('ASSIGN: primitive_type TO: TrackableObject');
         }
 
         // 15. ASSIGN: primitive type TO: TrackableArray
-        if (isTrackableArray(this._trackable.fields[fieldName])) {
+        if (isTrackableArray(this._trackable.fields[prop])) {
           console.info('ASSIGN: primitive_type TO: TrackableArray');
         }
 
@@ -338,35 +325,169 @@
       }
 
       changeEvent = {
-        field: fieldName,
-        oldValue: isTrackable(this._trackable.fields[fieldName]) ?
-                    this._trackable.fields[fieldName].asNonTrackable() :
-                    this._trackable.fields[fieldName],
-        newValue: isTrackable(value) ?
-                    value.asNonTrackable() :
-                    value
+        field: prop,
+        oldValue: isTrackable(this._trackable.fields[prop]) ? clone(this._trackable.fields[prop]) : this._trackable.fields[prop],
+        newValue: isTrackable(value) ? clone(value) : value
       };
 
       this._trackable.audit.events.push(changeEvent);
 
-      if (isObject(value)) {
-        this._trackable.fields[fieldName] = new TrackableObject(value);
-      } else if (isArray(value)) {
-        this._trackable.fields[fieldName] = new TrackableArray(value);
-      } else {
-        this._trackable.fields[fieldName] = value;
-      }
-
-      return;
+      this._trackable.fields[prop] = value;
     }});
   }
 
-  function Trackable (o) {
-    return;
+  function Tracker (config) {
+    var defaultConfig = {
+      trackingMethod: 'clone',
+      trackingScope: 'nested'
+    };
+
+    this.config = extend({}, defaultConfig, config);
   }
 
+  Tracker.prototype.asTrackable = function (obj) {
+    var prop, descriptor, cloneObj;
+
+    if(isTrackable(obj)) {
+      throw new Error('Trackable Objects and/or Arrays cannot be tracked.');
+    }
+
+    if (!isObject(obj) && !isArray(obj)) {
+      throw new Error('Only Objects and Arrays can be tracked.');
+    }
+
+    if (this.config.trackingMethod === 'clone') {
+      if (isObject(obj)) {
+        cloneObj = Object.create(TrackableObject.prototype);
+      }
+      if (isArray(obj)) {
+        cloneObj = Object.create(TrackableArray.prototype);
+      }
+      createTrackingStructure(cloneObj);
+      for (prop in obj) {
+        if (obj.hasOwnProperty(prop)) {
+          if (isTrackable(obj[prop])) {
+            throw new Error('The Object or Array you are trying to track cannot contain other items already being tracked.');
+          }
+          if (isObject(obj[prop]) || isArray(obj[prop])) {
+            if (this.config.trackingScope === 'nested') {
+              createPropertyTrackingStructure(cloneObj, prop, this.asTrackable(obj[prop]));
+            }
+            if (this.config.trackingScope === 'local') {
+              cloneObj[prop] = clone(obj[prop]);
+            }
+            continue;
+          }
+          createPropertyTrackingStructure(cloneObj, prop, obj[prop]);
+        }
+      }
+      return cloneObj;
+    }
+
+    if (this.config.trackingMethod === 'mutate') {
+      if (isObject(obj)) {
+        Object.setPrototypeOf(obj, TrackableObject.prototype);
+      }
+      if (isArray(obj)) {
+        Object.setPrototypeOf(obj, TrackableArray.prototype);
+      }
+      createTrackingStructure(obj);
+      for (prop in obj) {
+        if (obj.hasOwnProperty(prop)) {
+          descriptor = Object.getOwnPropertyDescriptor(obj, prop);
+          if (descriptor.configurable) {
+            if (isTrackable(obj[prop])) {
+              throw new Error('The Object or Array you are trying to track cannot contain other items already being tracked.');
+            }
+            if (isObject(obj[prop]) || isArray(obj[prop])) {
+              if (this.config.trackingScope === 'nested') {
+                createPropertyTrackingStructure(obj, prop, this.asTrackable(descriptor.value));
+              }
+              continue;
+            }
+            createPropertyTrackingStructure(obj, prop, descriptor.value);
+          }
+        }
+      }
+      return obj;
+    }
+  }
+
+  Tracker.prototype.asNonTrackable = function (obj) {
+    var prop, descriptor, cloneObj;
+
+    if(!isTrackable(obj)) {
+      throw new Error('Only Trackable Objects and/or Arrays cannot be made non-trackable.');
+    }
+
+    if (this.config.trackingMethod === 'clone') {
+      if (isTrackableObject(obj)) {
+        cloneObj = {};
+      }
+      if (isTrackableArray(obj)) {
+        cloneObj = [];
+      }
+      for (prop in obj) {
+        if (obj.hasOwnProperty(prop)) {
+          if (isTrackable(obj[prop])) {
+            if (this.config.trackingScope === 'nested') {
+              cloneObj[prop] = this.asNonTrackable(obj[prop]);
+            }
+            if (this.config.trackingScope === 'local') {
+              cloneObj[prop] = clone(obj[prop]);
+            }
+            continue;
+          }
+          if (isObject(obj[prop]) || isArray(obj[prop])) {
+            cloneObj[prop] = clone(obj[prop]);
+            continue;
+          }
+          cloneObj[prop] = obj[prop];
+        }
+      }
+      return cloneObj;
+    }
+
+    if (this.config.trackingMethod === 'mutate') {
+      for (prop in obj) {
+        if (obj.hasOwnProperty(prop)) {
+          descriptor = Object.getOwnPropertyDescriptor(obj, prop);
+          if (descriptor.configurable) {
+            if (isTrackable(obj[prop])) {
+              if (this.config.trackingScope === 'nested') {
+                Object.defineProperty(obj, prop, {
+                  enumerable: true,
+                  writable: true,
+                  configurable: true,
+                  value: this.asNonTrackable(obj[prop])
+                });
+              }
+              continue;
+            }
+            Object.defineProperty(obj, prop, {
+              enumerable: true,
+              writable: true,
+              configurable: true,
+              value: obj[prop]
+            });
+          }
+        }
+      }
+      deleteTrackingStructure(obj);
+      if (isTrackableObject(obj)) {
+        Object.setPrototypeOf(obj, Object.prototype);
+      }
+      if (isTrackableArray(obj)) {
+        Object.setPrototypeOf(obj, Array.prototype);
+      }
+      return obj;
+    }
+  }
+
+  function Trackable () { }
+
   Trackable.prototype.toString = function () {
-    return '[object TrackableArray]';
+    return '[object Trackable]';
   }
 
   Trackable.prototype.createSnapshot = function (id) {
@@ -403,11 +524,11 @@
   }
 
   Trackable.prototype.hasChildChanges = function () {
-    var fieldName;
-    for (let fieldName in this) {
-      if (this.hasOwnProperty(fieldName)) {
-        if (isTrackable(this._trackable.fields[fieldName])) {
-          if (this._trackable.fields[fieldName].hasChanges()) {
+    var prop;
+    for (prop in this) {
+      if (this.hasOwnProperty(prop)) {
+        if (isTrackable(this._trackable.fields[prop])) {
+          if (this._trackable.fields[prop].hasChanges()) {
             return true;
           }
         }
@@ -430,13 +551,7 @@
   Trackable.prototype.undo = function () {
     var changeEvent = this._trackable.audit.events[this._trackable.audit.pointer - 1];
     if (changeEvent) {
-      if (isObject(changeEvent.oldValue)) {
-        this._trackable.fields[changeEvent.field] = new TrackableObject(changeEvent.oldValue);
-      } else if (isArray(changeEvent.oldValue)) {
-        this._trackable.fields[changeEvent.field] = new TrackableArray(changeEvent.oldValue);
-      } else {
-        this._trackable.fields[changeEvent.field] = changeEvent.oldValue;
-      }
+      this._trackable.fields[changeEvent.field] = changeEvent.oldValue;
       this._trackable.audit.pointer -= 1;
     }
     return this;
@@ -450,15 +565,9 @@
   }
 
   Trackable.prototype.redo = function () {
-    let changeEvent = this._trackable.audit.events[this._trackable.audit.pointer];
+    var changeEvent = this._trackable.audit.events[this._trackable.audit.pointer];
     if (changeEvent) {
-      if (isObject(changeEvent.newValue)) {
-        this._trackable.fields[changeEvent.field] = new TrackableObject(changeEvent.newValue);
-      } else if (isArray(changeEvent.newValue)) {
-        this._trackable.fields[changeEvent.field] = new TrackableArray(changeEvent.newValue);
-      } else {
-        this._trackable.fields[changeEvent.field] = changeEvent.newValue;
-      }
+      this._trackable.fields[changeEvent.field] = changeEvent.newValue;
       this._trackable.audit.pointer += 1;
     }
     return this;
@@ -471,165 +580,21 @@
     return this;
   }
 
-  function TrackableObject (o) {
-    var fieldDescriptor,
-        fieldName,
-        trackableObject = {};
+  function TrackableObject () { }
 
-    if (isTrackable(o)) {
-      throw new Error('Trackers do not like to be tracked.');
-    }
-
-    if (!isObject(o)) {
-      throw new Error('Only an Object or Array can learn how to track.');
-    }
-
-    createTrackableObjectStructure(trackableObject);
-
-    for (fieldName in o) {
-      if (o.hasOwnProperty(fieldName)) {
-        fieldDescriptor = Object.getOwnPropertyDescriptor(o, fieldName);
-        if (fieldDescriptor.writable && fieldDescriptor.configurable) {
-          createTrackableField(trackableObject, fieldName, fieldDescriptor.value);
-        }
-      }
-    }
-
-    return trackableObject;
-  }
-
-  TrackableObject.prototype = new Trackable();
+  TrackableObject.prototype = Object.create(Trackable.prototype);
 
   TrackableObject.prototype.toString = function () {
     return '[object TrackableObject]';
   }
 
-  TrackableObject.prototype.asNonTrackable = function () {
-    var o = {},
-        fieldName;
+  function TrackableArray () { }
 
-    for (fieldName in this) {
-      if (this.hasOwnProperty(fieldName)) {
-        if (isTrackable(this[fieldName])) {
-          o[fieldName] = this[fieldName].asNonTrackable();
-        } else {
-          o[fieldName] = this[fieldName]
-        }
-      }
-    }
-
-    return o;
-  }
-
-  function TrackableArray (o) {
-    var fieldDescriptor,
-        fieldName,
-        trackableArray = {};
-
-    if (isTrackable(o)) {
-      throw new Error('Trackers do not like to be tracked.');
-    }
-
-    if (!isArray(o)) {
-      throw new Error('Only an Object or Array can learn how to track.');
-    }
-
-    createTrackableArrayStructure(trackableArray);
-
-    for (fieldName in o) {
-      if (o.hasOwnProperty(fieldName)) {
-        fieldDescriptor = Object.getOwnPropertyDescriptor(o, fieldName);
-        if (fieldDescriptor.writable && fieldDescriptor.configurable) {
-          createTrackableField(trackableArray, fieldName, fieldDescriptor.value);
-        }
-      }
-    }
-
-    return trackableArray;
-  }
-
-  TrackableArray.prototype = new Trackable();
+  TrackableArray.prototype = Object.create(Trackable.prototype);
 
   TrackableArray.prototype.toString = function () {
     return '[object TrackableArray]';
   }
 
-  TrackableArray.prototype.push = function () {
-    // TODO
-    throw new Error('Not Implemented.');
-  }
-
-  TrackableArray.prototype.pop = function () {
-    // TODO
-    throw new Error('Not Implemented.');
-  }
-
-  TrackableArray.prototype.splice = function () {
-    // TODO
-    throw new Error('Not Implemented.');
-  }
-
-  TrackableArray.prototype.asNonTrackable = function () {
-    var o = [],
-        fieldName;
-
-    for (fieldName in this) {
-      if (this.hasOwnProperty(fieldName)) {
-        if (isTrackable(this[fieldName])) {
-          o[fieldName] = this[fieldName].asNonTrackable();
-        } else {
-          o[fieldName] = this[fieldName]
-        }
-      }
-    }
-
-    return o;
-  }
-
-  window.TrackableObject = TrackableObject;
-
-  window.TrackableArray = TrackableArray;
-
-
-  /* TEST */
-  window.context = {
-    object1: {
-      string: 's',
-      number: 0,
-      stringArray: ['s0', 's1', 's2', 's3', 's4'],
-      numberArray: [0, 1, 2, 3, 4],
-      objectArray: [
-        {
-          field: 'object-array-field',
-          array: ['object-array-array-index-0', 'object-array-array-index-1']
-        },
-        {
-          field: 'object-array-field',
-          array: ['object-array-array-index-0', 'object-array-array-index-1']
-        }
-      ],
-      hybridArray: [
-        0,
-        's1',
-        {
-          field: 'hybrid-array-field',
-          object: {}
-        },
-        null,
-        ['a', 'b', 'c'],
-        {
-          field: 'hybrid-array-field',
-          array: [
-            {
-              field1: 'this-is-deep',
-              field2: 'this-is-very-deep'
-            }
-          ]
-        }
-      ]
-    },
-    object2: {}
-  };
-
-  window.tc = new TrackableObject(window.context);
+  window.Tracker = Tracker;
 })();

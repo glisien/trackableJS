@@ -1,53 +1,58 @@
 'use strict';
 
 describe('trackable', function () {
-  var trackableContext,
-      context = {
-        object1: {
-          string: 's',
-          number: 0,
-          stringArray: ['s0', 's1', 's2', 's3', 's4'],
-          numberArray: [0, 1, 2, 3, 4],
-          objectArray: [
-            {
-              field: 'object-array-field',
-              array: ['object-array-array-index-0', 'object-array-array-index-1']
-            },
-            {
-              field: 'object-array-field',
-              array: ['object-array-array-index-0', 'object-array-array-index-1']
-            }
-          ],
-          hybridArray: [
-            0,
-            's1',
-            {
-              field: 'hybrid-array-field',
-              object: {}
-            },
-            null,
-            ['a', 'b', 'c'],
-            {
-              field: 'hybrid-array-field',
-              array: [
-                {
-                  field1: 'this-is-deep',
-                  field2: 'this-is-very-deep'
-                }
-              ]
-            }
-          ]
-        },
-        object2: {},
+  function newTestObject () {
+    return {
+      object1: {
         string: 's',
-        number: 0
-      };
+        number: 0,
+        stringArray: ['s0', 's1', 's2', 's3', 's4'],
+        numberArray: [0, 1, 2, 3, 4],
+        objectArray: [
+          {
+            field: 'object-array-field',
+            array: ['object-array-array-index-0', 'object-array-array-index-1']
+          },
+          {
+            field: 'object-array-field',
+            array: ['object-array-array-index-0', 'object-array-array-index-1']
+          }
+        ],
+        hybridArray: [
+          0,
+          's1',
+          {
+            field: 'hybrid-array-field',
+            object: {}
+          },
+          null,
+          ['a', 'b', 'c'],
+          {
+            field: 'hybrid-array-field',
+            array: [
+              {
+                field1: 'this-is-deep',
+                field2: 'this-is-very-deep'
+              }
+            ]
+          }
+        ]
+      },
+      object2: {},
+      string: 's',
+      number: 0
+    };
+  }
 
-  beforeEach(function () {
-    trackableContext = new TrackableObject(context);
-  });
+  describe('tracker clone and nest', function () {
+    var tracker = new Tracker({ trackingMethod: 'clone', trackingScope: 'nested' }),
+        context = newTestObject(),
+        trackableContext;
 
-  describe('change-tracking', function () {
+    beforeEach(function () {
+      trackableContext = tracker.asTrackable(context);
+    });
+
     it('should have changes', function () {
       trackableContext.object1.string = 's-updated-1';
       expect(trackableContext.hasChanges()).toBeTruthy();
@@ -106,5 +111,5 @@ describe('trackable', function () {
       trackableContext.object1.applySnapshot('checkpoint-a');
       expect(trackableContext.object1.hasChangesAfterSnapshot('checkpoint-a')).toBeFalsy();
     });
-  });
+  })
 });
