@@ -90,7 +90,7 @@
   }
 
   function clone (obj) {
-    var cloneObj, prop, i;
+    var cloneObj, prop, i, l;
 
     if (isObject(obj)) {
       cloneObj = {};
