@@ -1,73 +1,49 @@
 (function () {
   'use strict';
 
-  var testObject = {
-    prop1: 's1',
-    prop2: 1,
-    prop3: {
-      prop1: 1,
-      prop2: 2,
-      prop3: 3,
-      prop4: [
-        {
-          prop1: 1,
-          prop2: 2
-        },
-        null
-      ]
-    }
-  };
-  testObject.prop3.prop1 = testObject.prop3.prop4;
-  testObject.prop3.prop4 = testObject.prop3;
-  window.testObject = testObject;
+  window.t = new Tracker();
 
-  function guid () {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-      var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
-      return v.toString(16);
-    });
+  window.o1 = {
+    a: 'hello-o1',
+    b: 1,
+    c: false,
+    d: [1,2,3],
+    e: null,
+    f: 0,
+    g: null
   }
 
-  var counter = 0;
-  var traversed = [];
-
-  function walk (obj, level) {
-    var trav;
-
-    if (!level) {
-      level = 0;
-    }
-
-    if (obj.id === null || obj.id === undefined) {
-      obj.id = guid();
-      traversed.push({
-        id: obj.id,
-        level: level
-      });
-    } else {
-      trav = null;
-      var l = traversed.length;
-      while (l--) {
-        if (traversed[l].id === obj.id) {
-          trav = traversed[l];
-          return;
-        }
-      }
-      if (trav && trav.level < level) {
-        console.log('YOU ARE IN A LOOP');
-        return;
-      }
-    }
-
-    console.log(counter++, ' walking object: ', obj.id, ' at level:', level);
-    for (var prop in obj) {
-      if (obj.hasOwnProperty(prop)) {
-        if (obj[prop] instanceof Object) {
-          walk(obj[prop], level + 1);
-        }
-      }
-    }
+  window.o2 = {
+    a: 'hello-o2',
+    b: 1,
+    c: false,
+    d: [1,2,3],
+    e: null,
+    f: 0,
+    g: null
   }
-  window.walk = walk;
 
+  window.o3 = {
+    a: null
+  }
+  o3.a = o3;
+
+  o1.e = o2;
+  o1.f = o2;
+  o1.g = o3;
+
+  o2.e = o1;
+
+  window.to1 = t.asTrackable(o1);
+  window.to2 = t.asTrackable(o2);
+  window.to3 = t.asTrackable(o3);
+
+  // t.iterate(o3, function(obj, prop, val, recurring) {
+  //   console.log('iterate() result: ')
+  //   console.log('        object: ', obj);
+  //   console.log('      property: ', prop);
+  //   console.log('         value: ', val);
+  //   console.log('     recurring: ', recurring);
+  //   console.log('_________________________________');
+  // });
 })();
