@@ -6,6 +6,7 @@ describe('trackable', function () {
       object1: {
         string: 's',
         number: 0,
+        date: new Date(1912, 10, 28),
         stringArray: ['s0', 's1', 's2', 's3', 's4'],
         numberArray: [0, 1, 2, 3, 4],
         objectArray: [
@@ -44,8 +45,8 @@ describe('trackable', function () {
     };
   }
 
-  describe('tracker clone and nest', function () {
-    var tracker = new Tracker({ trackingMethod: 'clone', trackingScope: 'nested' }),
+  describe('tracker', function () {
+    var tracker = new Tracker(),
         context = newTestObject(),
         trackableContext;
 
@@ -55,6 +56,11 @@ describe('trackable', function () {
 
     it('should have changes', function () {
       trackableContext.object1.string = 's-updated-1';
+      expect(trackableContext.hasChanges()).toBeTruthy();
+    });
+
+    it('should have changes', function () {
+      trackableContext.object1.date.setDate(21);
       expect(trackableContext.hasChanges()).toBeTruthy();
     });
 
