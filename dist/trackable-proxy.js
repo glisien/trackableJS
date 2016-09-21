@@ -21,6 +21,7 @@
 
   function ChangeEvent () {
     this.property = null;
+    this.isExistingProperty = null;
     this.oldValue = null;
     this.newValue = null;
   }
@@ -55,25 +56,72 @@
     });
   }
 
-  function onSet (target, property, value, receiver) {
+  function definePropertyTrap (target, property, descriptor) {
     if (this.isTracking) {
-      console.debug('onSet', target, property, value, receiver);
+      console.debug('definePropertyTrap', target, property, descriptor);
 
-      var trackingInfo = this.trackingInfoMap.get(receiver);
+      let trackedObj = this.originalToTrackedMap.get(target);
+      if (trackedObj) {
+        let trackingInfo = this.trackingInfoMap.get(trackedObj);
+        if (trackingInfo) {
+          let changeEvent = new ChangeEvent();
+          changeEvent.property = property;
+          changeEvent.isExistingProperty = target.hasOwnProperty(property);
+          changeEvent.oldValue = target[property];
+          changeEvent.newValue = descriptor.hasOwnProperty('value') ? descriptor.value : descriptor.get();
+
+          trackingInfo.events.push(changeEvent);
+          trackingInfo.pointer += 1;
+        }
+      }
+
+    }
+
+    return Reflect.defineProperty(target, property, descriptor);
+  }
+
+  function setTrap (target, property, value, receiver) {
+    if (this.isTracking) {
+      console.debug('setTrap', target, property, value, receiver);
+
+      let trackingInfo = this.trackingInfoMap.get(receiver);
       if (trackingInfo) {
-        var changeEvent = new ChangeEvent();
+        let changeEvent = new ChangeEvent();
         changeEvent.property = property;
+        changeEvent.isExistingProperty = target.hasOwnProperty(property);
         changeEvent.oldValue = target[property];
         changeEvent.newValue = value;
 
         trackingInfo.events.push(changeEvent);
-
         trackingInfo.pointer += 1;
       }
     }
 
     return Reflect.set(target, property, value, receiver);
   };
+
+  function deletePropertyTrap (target, property) {
+    if (this.isTracking) {
+      console.debug('deletePropertyTrap', target, property);
+
+      let trackedObj = this.originalToTrackedMap.get(target);
+      if (trackedObj) {
+        let trackingInfo = this.trackingInfoMap.get(trackedObj);
+        if (trackingInfo) {
+          let changeEvent = new ChangeEvent();
+          changeEvent.property = property;
+          changeEvent.isExistingProperty = target.hasOwnProperty(property);
+          changeEvent.oldValue = target[property];
+          changeEvent.newValue = undefined;
+
+          trackingInfo.events.push(changeEvent);
+          trackingInfo.pointer += 1;
+        }
+      }
+    }
+
+    return Reflect.deleteProperty(target, property);
+  }
 
   Tracker.prototype.asTrackable = function (obj) {
     if (!isObjectOrArray(obj)) {
@@ -100,22 +148,22 @@
 
     // track the current object
     let trackedObj = new Proxy(obj, {
-      set: onSet.bind(this)
+      defineProperty: definePropertyTrap.bind(this),
+      set: setTrap.bind(this),
+      deleteProperty: deletePropertyTrap.bind(this)
     });
 
     this.originalToTrackedMap.set(obj, trackedObj);
     this.trackedToOriginalMap.set(trackedObj, obj);
     this.trackingInfoMap.set(trackedObj, new TrackingInfo());
 
-    // go through the properties and track them as well
+    // go through the properties and track any available objects
     for (let prop in obj) {
       if (obj.hasOwnProperty(prop)) {
-        var childObj = obj[prop];
+        let childObj = obj[prop];
         if (isObjectOrArray(childObj)) {
-          var trackedChildObj = this.asTrackable(obj[prop]);
-          this.isTracking = false;
-          trackedObj[prop] = trackedChildObj;
-          this.isTracking = true;
+          let trackedChildObj = this.asTrackable(obj[prop]);
+          obj[prop] = trackedChildObj;
         }
       }
     }
@@ -135,7 +183,7 @@
       throw new Error('Object is not being tracked. Only tracked objects can be checked for changes.', obj);
     }
 
-    var trackingInfo = this.trackingInfoMap.get(obj);
+    let trackingInfo = this.trackingInfoMap.get(obj);
 
     // check local changes
     if (trackingInfo.events.length > 0 && trackingInfo.pointer > 0) {
@@ -145,7 +193,7 @@
     // check for child changes
     for (let prop in obj) {
       if (obj.hasOwnProperty(prop)) {
-        var childObj = obj[prop];
+        let childObj = obj[prop];
         if (isObjectOrArray(childObj) && this.trackingInfoMap.has(childObj)) {
           if (this.hasChanges(childObj)) {
             return true;
@@ -157,10 +205,31 @@
     return false;
   }
 
-  Tracker.prototype.printChanges = function (obj) {
-    // LG
-    // Helper method to print all the change stored by the tracker
-    // for the given object.
+  Tracker.prototype.print = function (obj) {
+    if (isObjectOrArray(obj) && this.trackingInfoMap.has(obj)) {
+      console.groupCollapsed(obj);
+      let trackingInfo = this.trackingInfoMap.get(obj);
+      console.log('Pointer: ', trackingInfo.pointer);
+      console.log('Snapshots: ', trackingInfo.snapshots);
+      console.groupCollapsed('EVENTS: ', trackingInfo.events.length);
+      for (let i = 0; i < trackingInfo.events.length; i++) {
+        console.groupCollapsed('EVENT: ', i + 1);
+        let event = trackingInfo.events[i];
+        console.log('Property: ', event.property);
+        console.log('Is Existing Property: ', event.isExistingProperty);
+        console.log('Old Value: ', event.oldValue);
+        console.log('New Value: ', event.newValue);
+        console.groupEnd();
+      }
+      console.groupEnd();
+      console.groupEnd();
+
+      for (let prop in obj) {
+        if (obj.hasOwnProperty(prop)) {
+          this.print(obj[prop]);
+        }
+      }
+    }
   }
 
   window.Tracker = Tracker;
