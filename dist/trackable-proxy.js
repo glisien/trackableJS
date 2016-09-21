@@ -87,7 +87,7 @@
         }
       }
     }
-    return true;// Reflect.defineProperty(target, property, descriptor);
+    return Reflect.defineProperty(target, property, descriptor);
   }
 
   function deletePropertyTrap (target, property) {
@@ -135,8 +135,8 @@
 
     // track the current object
     let trackedObj = new Proxy(obj, {
-      set: setTrap.bind(this),
-      //defineProperty: definePropertyTrap.bind(this),
+      //set: setTrap.bind(this),
+      defineProperty: definePropertyTrap.bind(this),
       deleteProperty: deletePropertyTrap.bind(this)
     });
 
