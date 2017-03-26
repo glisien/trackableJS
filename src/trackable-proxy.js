@@ -1,50 +1,53 @@
 (function () {
   'use strict';
 
-  function isObject (obj) {
+  function isObject(obj) {
     return ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase() === 'object';
   }
 
-  function isArray (obj) {
+  function isArray(obj) {
     return ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase() === 'array';
   }
 
-  function isObjectOrArray (obj) {
+  function isObjectOrArray(obj) {
     return isObject(obj) || isArray(obj);
   }
 
-  function TrackingInfo () {
+  function TrackingInfo() {
     this.pointer = 0;
     this.events = [];
     this.snapshots = {};
   }
 
-  function ChangeEvent () {
+  function ChangeEvent() {
     this.property = null;
     this.isExistingProperty = null;
     this.oldValue = null;
     this.newValue = null;
   }
 
-  function Tracker () {
+  function Tracker() {
     Object.defineProperty(this, 'originalToTrackedMap', {
       enumerable: false,
       writable: true,
       configurable: false,
       value: new WeakMap()
     });
+
     Object.defineProperty(this, 'trackedToOriginalMap', {
       enumerable: false,
       writable: true,
       configurable: false,
       value: new WeakMap()
     });
+
     Object.defineProperty(this, 'trackingInfoMap', {
       enumerable: false,
       writable: true,
       configurable: false,
       value: new WeakMap()
     });
+
     Object.defineProperty(this, 'isTracking', {
       enumerable: false,
       writable: true,
@@ -53,7 +56,7 @@
     });
   }
 
-  function setTrap (target, property, value, receiver) {
+  function setTrap(target, property, value, receiver) {
     if (this.isTracking) {
       console.debug('setTrap', target, property, value, receiver);
       let trackingInfo = this.trackingInfoMap.get(receiver);
@@ -65,12 +68,14 @@
         changeEvent.newValue = value;
         trackingInfo.events.push(changeEvent);
         trackingInfo.pointer += 1;
+      } else {
+        console.error('Could not find tracking info.')
       }
     }
     return Reflect.set(target, property, value, receiver);
   };
 
-  function definePropertyTrap (target, property, descriptor) {
+  function definePropertyTrap(target, property, descriptor) {
     if (this.isTracking) {
       console.debug('definePropertyTrap', target, property, descriptor);
       let trackedObj = this.originalToTrackedMap.get(target);
@@ -85,12 +90,17 @@
           trackingInfo.events.push(changeEvent);
           trackingInfo.pointer += 1;
         }
+        else {
+          console.error('Could not find tracking info.');
+        }
+      } else {
+        console.error('Could not find the tracked object.');
       }
     }
     return Reflect.defineProperty(target, property, descriptor);
   }
 
-  function deletePropertyTrap (target, property) {
+  function deletePropertyTrap(target, property) {
     if (this.isTracking) {
       console.debug('deletePropertyTrap', target, property);
       let trackedObj = this.originalToTrackedMap.get(target);
@@ -104,13 +114,17 @@
           changeEvent.newValue = undefined;
           trackingInfo.events.push(changeEvent);
           trackingInfo.pointer += 1;
+        } else {
+          console.error('Could not find tracking info');
         }
+      } else {
+        console.error('Could not find tracking object.');
       }
     }
     return Reflect.deleteProperty(target, property);
   }
 
-  Tracker.prototype.asTrackable = function (obj) {
+  Tracker.prototype.asTrackable = function(obj) {
     if (!isObjectOrArray(obj)) {
       throw new TypeError('The only trackable types are Object and Array.');
     }
@@ -129,7 +143,7 @@
         console.debug('...found the tracked object.', trackedObj);
         return trackedObj;
       } else {
-        console.debug('...but cannot find the tracked object.')
+        console.error('Could not find the the tracked object.')
       }
     }
 
@@ -158,10 +172,10 @@
     return trackedObj;
   }
 
-  Tracker.prototype.asNonTrackable = function (obj) {
+  Tracker.prototype.asNonTrackable = function(obj) {
   }
 
-  Tracker.prototype.hasChanges = function (obj) {
+  Tracker.prototype.hasChanges = function(obj) {
     if (!isObjectOrArray(obj)) {
       throw new TypeError('Only Objects and Arrays can be checked for changes.');
     }
@@ -192,7 +206,7 @@
     return false;
   }
 
-  Tracker.prototype.print = function (obj) {
+  Tracker.prototype.print = function(obj) {
     if (isObjectOrArray(obj) && this.trackingInfoMap.has(obj)) {
       console.groupCollapsed(obj);
       let trackingInfo = this.trackingInfoMap.get(obj);

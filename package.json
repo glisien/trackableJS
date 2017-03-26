@@ -4,7 +4,9 @@
   "description": "A Javascript change tracker for JSON objects.",
   "main": "dist/trackable.js",
   "directories": {},
-  "scripts": {},
+  "scripts": {
+    "test": "karma start karma.conf.js"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/glisien/trackable.git"
